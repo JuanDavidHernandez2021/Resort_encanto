@@ -11,7 +11,7 @@ from utils.extensions import db, bcrypt, serializer
 from routes.usuario.perfil_usuario_routes import perfil_usuario_bp
 from flask import Blueprint
 import os
-frim dotenv import load_dotenv
+from dotenv import load_dotenv
 load_dotenv()
 
 
