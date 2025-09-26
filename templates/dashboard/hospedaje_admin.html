@@ -6,60 +6,83 @@
 	<div class="row" id="habitaciones-admin">
 		{% for h in habitaciones %}
 		<div class="col-md-4 mb-4">
-			<div class="card habitacion-card estado-{{ h.estado|lower }}" style="min-height: 420px; max-height: 420px; display: flex; flex-direction: column; justify-content: space-between;">
-				<img src="{{ url_for('static', filename=h.imagen if h.imagen else 'img/default.jpg') }}" class="card-img-top" alt="{{ h.nombre }}" style="height: 200px; object-fit: cover;">
+			<div class="card habitacion-card estado-{{ h.estado|lower }}" 
+			     style="min-height: 420px; max-height: 420px; display: flex; flex-direction: column; justify-content: space-between;">
+				
+				<!-- Imagen -->
+				<img src="{{ url_for('static', filename=h.imagen if h.imagen else 'img/default.jpg') }}" 
+				     class="card-img-top" 
+				     alt="{{ h.nombre }}" 
+				     style="height: 200px; object-fit: cover;">
+
+				<!-- Contenido -->
 				<div class="card-body" style="flex: 1 1 auto;">
 					<h5 class="card-title">{{ h.nombre }}</h5>
- 					<p class="card-text">Cupo: {{ h.cupo_personas }}<br>Precio: ${{ '{:,.0f}'.format(h.precio) }} COP</p>
- 					<!-- Descripción oculta y botón Leer más -->
- 					<div class="card-text" style="max-height: 0; overflow: hidden;">
- 						{{ h.descripcion }}
- 					</div>
- 					<button type="button" class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#modalHabitacion{{ h.id }}">Leer más</button>
+ 					<p class="card-text">
+						Cupo: {{ h.cupo_personas }} <br>
+						Precio: ${{ '{:,.0f}'.format(h.precio) }} COP
+					</p>
+
+ 					<!-- Botón Leer más -->
+ 					<button type="button" class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#modalHabitacion{{ h.id }}">
+						Leer más
+					</button>
+
+					<!-- Estado -->
 					<span class="badge estado-label {{ h.estado|lower }}">{{ h.estado }}</span>
- 					<div class="d-flex justify-content-end align-items-end mt-3" style="position: absolute; bottom: 10px; right: 10px;">
-						<a href="{{ url_for('admin.hospedaje_editar', habitacion_id=h.id) }}" class="btn btn-light btn-sm me-2" title="Editar">
-							<i class="bi bi-pencil-square"></i>
+
+					<!-- Botones Editar/Eliminar -->
+					<div class="d-flex justify-content-between mt-3">
+						<a href="{{ url_for('admin.hospedaje_editar', habitacion_id=h.id) }}" 
+						   class="btn btn-warning btn-sm" 
+						   title="Editar">
+							<i class="bi bi-pencil-square"></i> Editar
 						</a>
-						<form action="{{ url_for('admin.hospedaje_eliminar', habitacion_id=h.id) }}" method="POST" style="display:inline;">
-							<button type="submit" class="btn btn-light btn-sm" title="Eliminar" onclick="return confirm('¿Seguro que deseas eliminar esta habitación?')">
-								<i class="bi bi-trash"></i>
+						<form action="{{ url_for('admin.hospedaje_eliminar', habitacion_id=h.id) }}" 
+						      method="POST" 
+						      style="display:inline;">
+							<button type="submit" class="btn btn-danger btn-sm" title="Eliminar" onclick="return confirm('¿Seguro que deseas eliminar esta habitación?')">
+								<i class="bi bi-trash"></i> Eliminar
 							</button>
 						</form>
-		 			</div>
-		 		</div>
-		 		<!-- Modal para mostrar toda la info de la habitación -->
-		 		<div class="modal fade" id="modalHabitacion{{ h.id }}" tabindex="-1" aria-labelledby="modalHabitacionLabel{{ h.id }}" aria-hidden="true">
-		 			<div class="modal-dialog modal-lg">
-		 				<div class="modal-content">
-		 					<div class="modal-header">
-		 						<h5 class="modal-title" id="modalHabitacionLabel{{ h.id }}">{{ h.nombre }}</h5>
-		 						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-		 					</div>
-		 					<div class="modal-body">
-		 						<img src="{{ url_for('static', filename=h.imagen if h.imagen else 'img/default.jpg') }}" class="img-fluid mb-3" alt="{{ h.nombre }}">
-		 						<p><strong>Cupo:</strong> {{ h.cupo_personas }}</p>
-		 						<p><strong>Precio:</strong> ${{ '{:,.0f}'.format(h.precio) }} COP</p>
-		 						<p><strong>Estado:</strong> {{ h.estado }}</p>
-		 						{% if h.descripcion %}
-		 							<p><strong>Descripción:</strong> {{ h.descripcion }}</p>
-		 						{% else %}
-		 							<p><strong>Descripción:</strong> <span class="text-muted">Sin descripción</span></p>
-		 						{% endif %}
-		 					</div>
-		 					<div class="modal-footer">
-		 						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-		 					</div>
-		 				</div>
-		 			</div>
-		 		</div>
-		 	</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Modal -->
+			<div class="modal fade" id="modalHabitacion{{ h.id }}" tabindex="-1" aria-labelledby="modalHabitacionLabel{{ h.id }}" aria-hidden="true">
+				<div class="modal-dialog modal-lg">
+					<div class="modal-content">
+						<div class="modal-header">
+							<h5 class="modal-title" id="modalHabitacionLabel{{ h.id }}">{{ h.nombre }}</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+						</div>
+						<div class="modal-body">
+							<img src="{{ url_for('static', filename=h.imagen if h.imagen else 'img/default.jpg') }}" class="img-fluid mb-3" alt="{{ h.nombre }}">
+							<p><strong>Cupo:</strong> {{ h.cupo_personas }}</p>
+							<p><strong>Precio:</strong> ${{ '{:,.0f}'.format(h.precio) }} COP</p>
+							<p><strong>Estado:</strong> {{ h.estado }}</p>
+							{% if h.descripcion %}
+								<p><strong>Descripción:</strong> {{ h.descripcion }}</p>
+							{% else %}
+								<p><strong>Descripción:</strong> <span class="text-muted">Sin descripción</span></p>
+							{% endif %}
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+						</div>
+					</div>
+				</div>
+			</div>
+
 		</div>
 		{% endfor %}
-			<!-- Formulario debajo de las cards -->
+	</div>
+
+	<!-- Formulario debajo de las cards -->
 	<div class="row justify-content-center mb-5">
 		<div class="col-lg-8">
-			<form action="{{ url_for('admin.hospedaje_nueva') }}" method="POST" enctype="multipart/form-data" class="p-4 rounded shadow" style="background: #fff;">
+			<form action="{{ url_for('admin.hospedaje_nueva') }}" method="POST" enctype="multipart/form-data" class="p-4 rounded shadow bg-white">
 				<h3 class="mb-4 text-center" style="color:#568ac5">Agregar Nueva Habitación</h3>
 				<div class="row g-3">
 					<div class="col-md-6">
@@ -79,7 +102,7 @@
 						<select class="form-select" id="estado" name="estado">
 							<option value="Disponible">Disponible</option>
 							<option value="Mantenimiento">Mantenimiento</option>
-							<option value="Ocupada">Ocupada</option>
+							<option value="Ocupado">Ocupado</option>
 						</select>
 					</div>
 					<div class="col-md-6">
@@ -97,5 +120,5 @@
 			</form>
 		</div>
 	</div>
-	<div class="row" id="habitaciones-admin">
+</div>
 {% endblock %}
