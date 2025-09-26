@@ -12,7 +12,10 @@ def home():
 
 @main_bp.route('/hospedaje')
 def hospedaje():
-    return render_template('home/Hospedaje.html')
+    habitaciones = nuevaHabitacion.query.all()
+    return render_template('home/Hospedaje.html', habitaciones=habitaciones)
+
+
 
 @main_bp.route('/restaurante')
 def restaurantes():
@@ -53,7 +56,9 @@ def home_usuario():
 
 @main_bp.route('/hospedaje_usuario')
 def hospedaje_usuario():
-    return render_template('usuario/hospedaje_usuario.html')
+    habitaciones = nuevaHabitacion.query.all()
+    return render_template('usuario/hospedaje_usuario.html', habitaciones=habitaciones)
+
 
 @main_bp.route('/restaurante_usuario')
 def restaurante_usuario():
