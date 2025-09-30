@@ -38,7 +38,7 @@
 						   title="Editar">
 							<i class="bi bi-pencil-square"></i> Editar
 						</a>
-						<form action="{{ url_for('admin.hospedaje_eliminar', habitacion_id=h.id) }}" 
+						<form action="{{ url_for('main.eliminar_habitacion_admin', habitacion_id=h.id) }}" 
 						      method="POST" 
 						      style="display:inline;">
 							<button type="submit" class="btn btn-danger btn-sm" title="Eliminar" onclick="return confirm('¿Seguro que deseas eliminar esta habitación?')">
