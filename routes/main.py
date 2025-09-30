@@ -68,6 +68,11 @@ def restaurante_usuario():
 def experiencias_usuario():
     return render_template('usuario/experiencias_usuario.html')
 
+@main_bp.route('/nosotros_usuario')
+def nosotros_usuario():
+    return render_template('usuario/nosotros_usuario.html')
+# ...existing code...
+
 #@main_bp.route('/perfil_usuario')
 #def perfil_usuario():
     #return render_template('usuario/perfil_usuario.html')
@@ -96,6 +101,14 @@ def experiencias_admin():
 def nosotros_admin():
     return render_template('dashboard/nosotros_admin.html')
 
+@main_bp.route('/hospedaje_admin/eliminar/<int:habitacion_id>', methods=['POST'])
+def eliminar_habitacion_admin(habitacion_id):
+    habitacion = nuevaHabitacion.query.get_or_404(habitacion_id)
+    # Elimina la habitación de la base de datos
+    from models.baseDatos import db  # importa tu objeto db si no está importado
+    db.session.delete(habitacion)
+    db.session.commit()
+    return redirect(url_for('main.hospedaje_admin'))
 
 
 # Ruta de login demo para pruebas rápidas ---------------------------------
