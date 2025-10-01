@@ -1,6 +1,11 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session
+from flask import Blueprint, render_template, request, redirect, url_for, session, current_app, flash
 from datetime import datetime
-from models.baseDatos import nuevaHabitacion
+from models.baseDatos import db,nuevaHabitacion
+import os
+from werkzeug.utils import secure_filename
+from flask import current_app
+
+
 
 main_bp = Blueprint('main', __name__)
 
@@ -108,6 +113,65 @@ def eliminar_habitacion_admin(habitacion_id):
     from models.baseDatos import db  # importa tu objeto db si no está importado
     db.session.delete(habitacion)
     db.session.commit()
+    return redirect(url_for('main.hospedaje_admin'))
+
+@main_bp.route('/hospedaje_admin/editar/<int:habitacion_id>', methods=['GET', 'POST'])
+def editar_habitacion_admin(habitacion_id):
+    habitacion = nuevaHabitacion.query.get_or_404(habitacion_id)
+
+    if request.method == 'POST':
+        # Actualiza los campos de la habitación
+        habitacion.nombre = request.form.get('nombre', habitacion.nombre)
+        habitacion.precio = request.form.get('precio', habitacion.precio)
+        habitacion.cupo_personas = request.form.get('cupo_personas', habitacion.cupo_personas)
+        habitacion.estado = request.form.get('estado', habitacion.estado)
+        habitacion.descripcion = request.form.get('descripcion', habitacion.descripcion)
+
+        # Manejo de imagen (si se sube una nueva)
+        imagen = request.files.get('imagen')
+        if imagen and imagen.filename:
+            filename = secure_filename(imagen.filename)
+            upload_dir = os.path.join(current_app.root_path, 'static', 'img')
+            os.makedirs(upload_dir, exist_ok=True)
+            save_path = os.path.join(upload_dir, filename)
+            imagen.save(save_path)
+
+            # Borrar imagen vieja si existe y no es el placeholder/default
+            try:
+                old = habitacion.imagen  # p.ej. "img/old.jpg" o None
+                if old:
+                    old_path = os.path.join(current_app.root_path, 'static', old)
+                    if os.path.exists(old_path) and os.path.isfile(old_path):
+                        # evita borrar un default si tu placeholder contiene "default" en el nombre
+                        if 'default' not in os.path.basename(old_path).lower():
+                            os.remove(old_path)
+            except Exception as e:
+                current_app.logger.warning(f"Error al eliminar imagen anterior: {e}")
+
+            # Guarda la ruta relativa a static/ en la BD (consistente con tu uso actual)
+            habitacion.imagen = f"img/{filename}"
+
+        # Guardar cambios en BD
+        try:
+            db.session.commit()
+            flash('Habitación actualizada correctamente.', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al actualizar la habitación: {e}', 'danger')
+
+        return redirect(url_for('main.hospedaje_admin'))
+
+    # GET -> renderizar formulario con datos actuales
+    return render_template('dashboard/editar_habitacion.html', habitacion=habitacion)
+
+@main_bp.route('/hospedaje/actualizar/<int:habitacion_id>', methods=['POST'])
+def hospedaje_actualizar(habitacion_id):
+    habitacion = nuevaHabitacion.query.get(habitacion_id)
+    if habitacion:
+        habitacion.nombre = request.form['nombre']
+        habitacion.precio = request.form['precio']
+        # ... actualizas lo demás
+        db.session.commit()
     return redirect(url_for('main.hospedaje_admin'))
 
 
