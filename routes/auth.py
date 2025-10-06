@@ -4,6 +4,14 @@ from werkzeug.security import generate_password_hash
 
 auth_bp = Blueprint('auth', __name__)
 
+#boton para cerrar sesion
+@auth_bp.route('/logout')
+def logout():
+    session.clear()  # Borra todos los datos de la sesión del usuario
+    return redirect(url_for('main.login'))  # Redirige al login del blueprint 'main'
+
+
+
 # ---------------- GOOGLE LOGIN ---------------- #
 
 @auth_bp.route('/google-login')
@@ -112,3 +120,11 @@ def password_recover():
     else:
         flash('No se encontró una cuenta asociada a ese correo')
     return redirect(url_for('registro.login'))
+
+from werkzeug.security import check_password_hash
+
+
+
+
+# -------------------------------- #
+

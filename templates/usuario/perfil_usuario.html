@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <title>Perfil de Usuario</title>
@@ -10,65 +10,39 @@
 
 <div class="container mt-5 text-center">
 
-  <img src="{{ usuario.foto }}" class="rounded-circle mb-3" width="120" height="120">
-  <h2>{{ usuario.nombre }}</h2>
-  <span class="badge bg-warning text-dark">Miembro {{ usuario.membresia }}</span>
+  <img src="{{ usuario.foto }}" class="rounded-circle mb-3" width="120" height="120" alt="Foto de perfil">
+  <h2 class="fw-bold">{{ usuario.nombre }}</h2>
+  <span class="badge bg-warning text-dark mb-3">Miembro {{ usuario.membresia }}</span>
 
   <hr>
 
-  <h4>Detalles de Contacto</h4>
+  <h4 class="fw-semibold">Detalles de Contacto</h4>
   <p><b>Email:</b> {{ usuario.email }}</p>
-  <p><b>Teléfono:</b> {{ usuario.telefono }}</p>
 
   <button class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#modalEditar">Editar Perfil</button>
+  <a href="{{ url_for('main.logout') }}" class="btn btn-danger mt-3 ms-2">Cerrar Sesión</a>
 
   <hr>
-  <h4>Reservas Activas</h4>
-  {% if reservas_activas %}
-    <ul class="list-group">
-      {% for r in reservas_activas %}
-        <li class="list-group-item">{{ r.hotel }} - {{ r.fecha }}</li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p>No tienes reservas activas.</p>
-  {% endif %}
 
-  <hr>
-  <h4>Estancias Pasadas</h4>
-  {% if estancias_pasadas %}
-    <ul class="list-group">
-      {% for r in estancias_pasadas %}
-        <li class="list-group-item">{{ r.hotel }} - {{ r.fecha }}</li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p>No tienes estancias pasadas.</p>
-  {% endif %}
 </div>
 
-
 <!-- Modal de edición -->
-<div class="modal fade" id="modalEditar" tabindex="-1">
+<div class="modal fade" id="modalEditar" tabindex="-1" aria-labelledby="modalEditarLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
       <form method="POST" action="{{ url_for('perfil_usuario.editar_perfil') }}">
         <div class="modal-header">
-          <h5 class="modal-title">Editar Perfil</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          <h5 class="modal-title" id="modalEditarLabel">Editar Perfil</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
         </div>
         <div class="modal-body">
           <div class="mb-3">
             <label class="form-label">Nombre</label>
-            <input type="text" class="form-control" name="nombre" value="{{ usuario.nombre }}">
+            <input type="text" class="form-control" name="nombre" value="{{ usuario.nombre }}" required>
           </div>
           <div class="mb-3">
             <label class="form-label">Email</label>
-            <input type="email" class="form-control" name="email" value="{{ usuario.email }}">
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Teléfono</label>
-            <input type="text" class="form-control" name="telefono" value="{{ usuario.telefono }}">
+            <input type="email" class="form-control" name="email" value="{{ usuario.email }}" required>
           </div>
         </div>
         <div class="modal-footer">

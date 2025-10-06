@@ -1,9 +1,10 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, current_app, flash
 from datetime import datetime
-from models.baseDatos import db,nuevaHabitacion
+from models.baseDatos import db,nuevaHabitacion, Usuario
 import os
 from werkzeug.utils import secure_filename
 from flask import current_app
+from werkzeug.security import check_password_hash
 
 
 
@@ -78,9 +79,28 @@ def nosotros_usuario():
     return render_template('usuario/nosotros_usuario.html')
 # ...existing code...
 
-#@main_bp.route('/perfil_usuario')
-#def perfil_usuario():
-    #return render_template('usuario/perfil_usuario.html')
+@main_bp.route('/perfil_usuario')
+def perfil_usuario():
+    user_data = session.get('user')
+    print("DEBUG user_data:", user_data)  # <-- Agrega esto para ver qué hay en la sesión
+    if not user_data:
+        flash("Debes iniciar sesión para ver tu perfil.", "warning")
+        return redirect(url_for('main.home'))
+
+    usuario = {
+        "nombre": user_data.get("nombre"),
+        "email": user_data.get("correo"),
+        "foto": "/static/img/default_profile.jpg",
+        "membresia": user_data.get("rol", "Usuario estándar")
+    }
+    return render_template('usuario/perfil_usuario.html', usuario=usuario)
+
+
+#boton para cerrar sesion
+@main_bp.route('/logout')
+def logout():
+    session.clear()  # Elimina toda la sesión
+    return redirect(url_for('main.home'))  # Redirige al inicio o login
 
 
 #Rutas Admin ------------------------------------------------------------
@@ -179,16 +199,24 @@ def hospedaje_actualizar(habitacion_id):
 
 @main_bp.route('/demo-login', methods=['GET', 'POST'])
 def demo_login():
-    # Demo login kept for quick testing under /demo-login
     if request.method == 'POST':
         username = request.form.get('usuario')
         password = request.form.get('password')
 
-        if username == "admin" and password == "1234":
-            session['rol'] = 'admin'
-            return redirect(url_for('main.home_admin'))
+        usuario = Usuario.query.filter_by(usuario=username).first()
+        if usuario and check_password_hash(usuario.contrasena, password):
+            session['rol'] = getattr(usuario, 'rol', 'Usuario estándar')
+            session['user'] = {
+                "nombre": usuario.usuario,  # <--- usa usuario.usuario
+                "correo": usuario.correo,
+                "rol": getattr(usuario, 'rol', 'Usuario estándar')
+            }
+            if getattr(usuario, 'rol', '') == "Administrador":
+                return redirect(url_for('main.home_admin'))
+            else:
+                return redirect(url_for('main.home_usuario'))
         else:
-            session['rol'] = 'usuario'
-            return redirect(url_for('main.home_usuario'))
+            flash("Usuario o contraseña incorrectos", "danger")
+            return redirect(url_for('main.demo_login'))
 
     return render_template('home/Login.html')
