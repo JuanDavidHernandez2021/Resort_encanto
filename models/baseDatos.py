@@ -14,6 +14,7 @@ class Usuario(db.Model):
     direccion = db.Column(db.String(255), nullable=True)
     fechaNacimiento = db.Column(db.Date, nullable=True)
     rol = db.Column(db.String(20), nullable=True, default='usuario')
+    imagen = db.Column(db.String(255), default='defaul.jpg')  # <-- este campo nuevo
 
     def __repr__(self):
         return f"<Usuario {self.usuario}>"

@@ -1,37 +1,35 @@
-from flask import Blueprint, render_template, request, redirect, url_for
-from utils.extensions import db
+from flask import Blueprint, render_template, session, redirect, url_for, flash
+from models.baseDatos import Usuario
 
-perfil_usuario_bp = Blueprint('perfil_usuario', __name__, template_folder='../templates')
+# Crear el Blueprint
+perfil_usuario_bp = Blueprint('perfil_usuario_bp', __name__, template_folder='../templates')
 
-# Datos simulados de ejemplo
-usuario = {
-    "nombre": "Carlos Mendoza",
-    "email": "c.mendoza@example.com",
-    "telefono": "+1 (555) 123-4567",
-    "membresia": "Oro",
-    "foto": "https://via.placeholder.com/150",
-    "reservas": [
-        {"hotel": "Hotel Paraíso", "fecha": "2025-10-10", "estado": "Activa"},
-        {"hotel": "Resort Encanto", "fecha": "2025-09-01", "estado": "Completada"}
-    ]
-}
-
-# 👉 Ruta para mostrar perfil
+# Ruta del perfil de usuario
 @perfil_usuario_bp.route("/perfil_usuario")
-def perfil():
-    reservas_activas = [r for r in usuario["reservas"] if r["estado"] == "Activa"]
-    estancias_pasadas = [r for r in usuario["reservas"] if r["estado"] == "Completada"]
-    return render_template(
-        "usuario/perfil_usuario.html",  # 👈 corregido (usuario, no usuarios)
-        usuario=usuario,
-        reservas_activas=reservas_activas,
-        estancias_pasadas=estancias_pasadas
-    )
+def perfil_usuario():
+    # Si no hay sesión activa, redirige al login
+    if 'user' not in session:
+        flash("Por favor inicia sesión primero.", "warning")
+        return redirect(url_for('main.demo_login'))  # o la ruta de tu login real
 
-# 👉 Ruta para editar perfil
-@perfil_usuario_bp.route("/editar_perfil", methods=["POST"])
-def editar_perfil():
-    usuario["nombre"] = request.form["nombre"]
-    usuario["email"] = request.form["email"]
-    usuario["telefono"] = request.form["telefono"]
-    return redirect(url_for("perfil_usuario.perfil"))  # 👈 corregido
+    # Obtener los datos de la sesión
+    user_data = session['user']
+
+    # Buscar el usuario real en la base de datos (por ID)
+    usuario_db = Usuario.query.filter_by(idUsuario=user_data['id']).first()
+
+    if usuario_db:
+        usuario = {
+            'nombre': usuario_db.usuario,
+            'correo': usuario_db.correo,
+            'rol': getattr(usuario_db, 'rol', 'Usuario estándar')
+        }
+    else:
+        # Si no lo encuentra, usa los datos de sesión
+        usuario = {
+            'nombre': user_data.get('nombre', ''),
+            'correo': user_data.get('correo', ''),
+            'rol': user_data.get('rol', 'Usuario estándar')
+        }
+
+    return render_template("usuario/perfil_usuario.html", usuario=usuario)

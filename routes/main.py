@@ -10,6 +10,14 @@ from werkzeug.security import check_password_hash
 
 main_bp = Blueprint('main', __name__)
 
+# Carpeta donde se guardarán las imágenes
+UPLOAD_FOLDER = 'static/img/usuarios'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
 #Rutas Home ---------------------------------------------------------
  
 @main_bp.route('/')
@@ -81,19 +89,90 @@ def nosotros_usuario():
 
 @main_bp.route('/perfil_usuario')
 def perfil_usuario():
+    # Si no hay usuario en sesión, redirige al login
+    if 'user' not in session:
+        flash("Por favor inicia sesión primero.", "warning")
+        return redirect(url_for('registro.login'))
+
+    user_data = session['user']
+    print("DEBUG SESSION:", user_data)
+
+    # 🔹 Ajuste importante: usar la clave correcta del modelo
+    usuario_db = Usuario.query.filter_by(idUsuario=user_data['id']).first()
+
+    # Si no se encuentra en la BD, usa los datos de sesión
+    if not usuario_db:
+        usuario = {
+            'usuario': user_data.get('nombre', ''),
+            'correo': user_data.get('correo', ''),
+            'rol': user_data.get('rol', 'usuario')
+        }
+    else:
+        usuario = {
+            'usuario': usuario_db.usuario,
+            'correo': usuario_db.correo,
+            'rol': usuario_db.rol or 'usuario'
+        }
+
+    return render_template('usuario/perfil_usuario.html', usuario=usuario)
+
+#------------------------------------------------------------------------------------------------------
+@main_bp.route('/editar_imagen_usuario', methods=['POST'])
+def editar_imagen_usuario():
+    if 'foto' not in request.files:
+        flash('No se seleccionó ninguna imagen.', 'error')
+        return redirect(url_for('perfil_usuario_bp.perfil_usuario'))
+
+    foto = request.files['foto']
+    if foto.filename == '':
+        flash('No se seleccionó ningún archivo.', 'error')
+        return redirect(url_for('perfil_usuario_bp.perfil_usuario'))
+
+    if foto:
+        filename = secure_filename(foto.filename)
+        ruta_guardado = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+        foto.save(ruta_guardado)
+
+        # Actualizar el usuario en la base de datos
+        usuario_id = session.get('usuario_id')
+        usuario = Usuario.query.get(usuario_id)
+        usuario.foto = filename
+        db.session.commit()
+
+        flash('Imagen de perfil actualizada correctamente.', 'success')
+    return redirect(url_for('perfil_usuario_bp.perfil_usuario'))
+
+
+
+
+#-------------------------------------------------------------------------------------------------------------
+
+@main_bp.route('/perfil_usuario/editar', methods=['POST'])
+def editar_perfil_usuario():
     user_data = session.get('user')
-    print("DEBUG user_data:", user_data)  # <-- Agrega esto para ver qué hay en la sesión
     if not user_data:
-        flash("Debes iniciar sesión para ver tu perfil.", "warning")
+        flash("Debes iniciar sesión para editar tu perfil.", "warning")
         return redirect(url_for('main.home'))
 
-    usuario = {
-        "nombre": user_data.get("nombre"),
-        "email": user_data.get("correo"),
-        "foto": "/static/img/default_profile.jpg",
-        "membresia": user_data.get("rol", "Usuario estándar")
-    }
-    return render_template('usuario/perfil_usuario.html', usuario=usuario)
+    usuario = Usuario.query.get(user_data['id'])
+    if not usuario:
+        flash("Usuario no encontrado.", "danger")
+        return redirect(url_for('main.perfil_usuario'))
+
+    usuario.usuario = request.form.get('nombre', usuario.usuario)
+    usuario.correo = request.form.get('email', usuario.correo)
+    db.session.commit()
+
+    # Actualiza también la sesión para que muestre los nuevos datos
+    session['user']['nombre'] = usuario.usuario
+    session['user']['correo'] = usuario.correo
+
+    flash("Perfil actualizado correctamente.", "success")
+    return redirect(url_for('main.perfil_usuario'))
+
+#-----------------------------------------------------------------------------------------
+
+
 
 
 #boton para cerrar sesion
@@ -199,6 +278,7 @@ def hospedaje_actualizar(habitacion_id):
 
 @main_bp.route('/demo-login', methods=['GET', 'POST'])
 def demo_login():
+    session.clear()  # Limpia cualquier sesión vieja antes de iniciar una nueva
     if request.method == 'POST':
         username = request.form.get('usuario')
         password = request.form.get('password')
@@ -207,10 +287,13 @@ def demo_login():
         if usuario and check_password_hash(usuario.contrasena, password):
             session['rol'] = getattr(usuario, 'rol', 'Usuario estándar')
             session['user'] = {
-                "nombre": usuario.usuario,  # <--- usa usuario.usuario
-                "correo": usuario.correo,
-                "rol": getattr(usuario, 'rol', 'Usuario estándar')
-            }
+    "id": usuario.idUsuario,   # 🔹 Añadimos el ID del usuario
+    "nombre": usuario.usuario,
+    "correo": usuario.correo,
+    "rol": getattr(usuario, 'rol', 'Usuario estándar')
+}
+
+        
             if getattr(usuario, 'rol', '') == "Administrador":
                 return redirect(url_for('main.home_admin'))
             else:
