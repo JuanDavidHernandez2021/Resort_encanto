@@ -105,13 +105,15 @@ def perfil_usuario():
         usuario = {
             'usuario': user_data.get('nombre', ''),
             'correo': user_data.get('correo', ''),
-            'rol': user_data.get('rol', 'usuario')
+            'rol': user_data.get('rol', 'usuario'),
+            'imagen': user_data.get('imagen')  # 🔹 Agregado aquí
         }
     else:
         usuario = {
             'usuario': usuario_db.usuario,
             'correo': usuario_db.correo,
-            'rol': usuario_db.rol or 'usuario'
+            'rol': usuario_db.rol or 'usuario',
+            'imagen': usuario_db.imagen  # 🔹 Agregado aquí
         }
 
     return render_template('usuario/perfil_usuario.html', usuario=usuario)
@@ -119,28 +121,41 @@ def perfil_usuario():
 #------------------------------------------------------------------------------------------------------
 @main_bp.route('/editar_imagen_usuario', methods=['POST'])
 def editar_imagen_usuario():
-    if 'foto' not in request.files:
+    if 'imagen' not in request.files:
         flash('No se seleccionó ninguna imagen.', 'error')
-        return redirect(url_for('perfil_usuario_bp.perfil_usuario'))
+        return redirect(url_for('main.perfil_usuario'))
 
-    foto = request.files['foto']
+    foto = request.files['imagen']
     if foto.filename == '':
         flash('No se seleccionó ningún archivo.', 'error')
-        return redirect(url_for('perfil_usuario_bp.perfil_usuario'))
+        return redirect(url_for('main.perfil_usuario'))
 
-    if foto:
-        filename = secure_filename(foto.filename)
-        ruta_guardado = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+    if foto and allowed_file(foto.filename):
+        import uuid
+        filename = f"{uuid.uuid4().hex}_{secure_filename(foto.filename)}"
+
+        # Carpeta correcta
+        upload_dir = os.path.join(current_app.root_path, UPLOAD_FOLDER)
+        os.makedirs(upload_dir, exist_ok=True)
+        ruta_guardado = os.path.join(upload_dir, filename)
         foto.save(ruta_guardado)
 
-        # Actualizar el usuario en la base de datos
-        usuario_id = session.get('usuario_id')
+        # Actualizar base de datos
+        usuario_id = session['user']['id']
         usuario = Usuario.query.get(usuario_id)
-        usuario.foto = filename
+        usuario.imagen = filename
         db.session.commit()
 
+        # Actualizar sesión
+        session['user']['imagen'] = filename
+
         flash('Imagen de perfil actualizada correctamente.', 'success')
-    return redirect(url_for('perfil_usuario_bp.perfil_usuario'))
+    else:
+        flash('Formato de imagen no permitido.', 'error')
+
+    return redirect(url_for('main.perfil_usuario'))
+
+
 
 
 

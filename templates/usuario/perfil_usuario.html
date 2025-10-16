@@ -22,55 +22,58 @@
           <a href="{{ url_for('main.logout') }}" class="btn btn-light position-absolute end-0 top-0 m-3">Cerrar sesión</a>
           
           <!-- Sección Avatar -->
-          <div class="d-flex flex-column align-items-center mb-4">
-            <div style="position:relative;">
-              <span style="display:block;width:130px;height:130px;background:#e3f2fd;border-radius:50%;box-shadow:0 0 0 8px #1673ff44,0 4px 16px #1673ff22;position:relative;">
-                <img src="/static/img/defaul.jpg" alt="Avatar" 
-                     style="width:110px;height:110px;border-radius:50%;object-fit:cover;
-                            position:absolute;top:10px;left:10px;
-                            box-shadow:0 2px 8px rgba(0,0,0,0.15);">
-                
-                <!-- Botón con ícono de cámara -->
-                <button type="button" 
-                        class="btn btn-light border position-absolute shadow-sm btn-cambiar-imagen" 
-                        style="bottom:10px;right:10px;border-radius:50%;width:42px;height:42px;
-                              display:flex;align-items:center;justify-content:center;
-                              background-color:white;"
-                        data-bs-toggle="modal" data-bs-target="#modalEditarImagen"
-                        title="Cambiar imagen de perfil">
-                  <i class="bi bi-camera-fill text-primary fs-5"></i>
-                </button>
-              </span>
-            </div>
+<div class="d-flex flex-column align-items-center mb-4">
+  <div style="position:relative;">
+    <span style="display:block;width:130px;height:130px;background:#e3f2fd;border-radius:50%;box-shadow:0 0 0 8px #1673ff44,0 4px 16px #1673ff22;position:relative;">
+      
+      <!-- Imagen del usuario o avatar por defecto -->
+  <img src="{{ url_for('static', filename='img/usuarios/' + (usuario.imagen if usuario.imagen else 'avatar.png')) }}"
+    alt="Avatar"
+    style="width:110px;height:110px;border-radius:50%;object-fit:cover; position:absolute;top:10px;left:10px;">
 
-            <!-- Modal para editar imagen -->
-            <div class="modal fade" id="modalEditarImagen" tabindex="-1" aria-labelledby="modalEditarImagenLabel" aria-hidden="true">
-              <div class="modal-dialog">
-                <div class="modal-content">
-                  <form method="POST" action="{{ url_for('main.editar_perfil_usuario') }}" enctype="multipart/form-data">
-                    <div class="modal-header">
-                      <h5 class="modal-title" id="modalEditarImagenLabel">Editar imagen de perfil</h5>
-                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                    </div>
-                    <div class="modal-body">
-                      <input type="file" class="form-control" name="imagen" accept="image/*" required>
-                    </div>
-                    <div class="modal-footer">
-                      <button type="submit" class="btn btn-primary">Guardar</button>
-                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            </div>
+      
+      <!-- Botón con ícono de cámara -->
+      <button type="button" 
+              class="btn btn-light border position-absolute shadow-sm btn-cambiar-imagen" 
+              style="bottom:10px;right:10px;border-radius:50%;width:42px;height:42px;
+                    display:flex;align-items:center;justify-content:center;
+                    background-color:white;"
+              data-bs-toggle="modal" data-bs-target="#modalEditarImagen"
+              title="Cambiar imagen de perfil">
+        <i class="bi bi-camera-fill text-primary fs-5"></i>
+      </button>
+    </span>
+  </div>
+
+  <!-- Modal para editar imagen -->
+  <div class="modal fade" id="modalEditarImagen" tabindex="-1" aria-labelledby="modalEditarImagenLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <form method="POST" action="{{ url_for('main.editar_imagen_usuario') }}" enctype="multipart/form-data">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalEditarImagenLabel">Editar imagen de perfil</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
           </div>
+          <div class="modal-body">
+            <input type="file" class="form-control" name="imagen" accept="image/*" required>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">Guardar</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 
           <!-- Datos del perfil -->
           <h2 class="fw-bold mb-4">Perfil</h2>
           <form>
             <div class="mb-3">
               <label class="form-label">Nombre</label>
-              <input type="text" class="form-control form-control-lg" value="{{ usuario.nombre }}" readonly>
+              <input type="text" class="form-control form-control-lg" value="{{ usuario.usuario }}" readonly>
             </div>
             <div class="mb-3">
               <label class="form-label">Correo</label>
@@ -101,7 +104,7 @@
           <div class="modal-body">
             <div class="mb-3">
               <label class="form-label">Nombre</label>
-              <input type="text" class="form-control" name="nombre" value="{{ usuario.nombre }}" required>
+              <input type="text" class="form-control" name="nombre" value="{{ usuario.usuario }}" required>
             </div>
             <div class="mb-3">
               <label class="form-label">Email</label>
