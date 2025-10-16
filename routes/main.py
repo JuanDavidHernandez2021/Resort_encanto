@@ -85,11 +85,10 @@ def experiencias_usuario():
 @main_bp.route('/nosotros_usuario')
 def nosotros_usuario():
     return render_template('usuario/nosotros_usuario.html')
-# ...existing code...
+
 
 @main_bp.route('/perfil_usuario')
 def perfil_usuario():
-    # Si no hay usuario en sesión, redirige al login
     if 'user' not in session:
         flash("Por favor inicia sesión primero.", "warning")
         return redirect(url_for('registro.login'))
@@ -97,26 +96,40 @@ def perfil_usuario():
     user_data = session['user']
     print("DEBUG SESSION:", user_data)
 
-    # 🔹 Ajuste importante: usar la clave correcta del modelo
+    # Busca en la BD
     usuario_db = Usuario.query.filter_by(idUsuario=user_data['id']).first()
-
-    # Si no se encuentra en la BD, usa los datos de sesión
     if not usuario_db:
-        usuario = {
-            'usuario': user_data.get('nombre', ''),
-            'correo': user_data.get('correo', ''),
-            'rol': user_data.get('rol', 'usuario'),
-            'imagen': user_data.get('imagen')  # 🔹 Agregado aquí
-        }
-    else:
-        usuario = {
-            'usuario': usuario_db.usuario,
-            'correo': usuario_db.correo,
-            'rol': usuario_db.rol or 'usuario',
-            'imagen': usuario_db.imagen  # 🔹 Agregado aquí
-        }
+        flash("Error: No se encontró el usuario en la base de datos.", "danger")
+        return redirect(url_for('registro.login'))
+
+    # Sincroniza correo si cambia
+    if usuario_db.correo != user_data.get('correo'):
+        print(f"ADVERTENCIA: El correo en sesión ({user_data.get('correo')}) no coincide con la BD ({usuario_db.correo})")
+        session['user']['correo'] = usuario_db.correo
+        session['user']['usuario'] = usuario_db.usuario
+        flash("Se han actualizado tus datos de sesión.", "info")
+
+    # Formatea la fecha
+    fecha_nacimiento = (
+        usuario_db.fechaNacimiento.strftime('%Y-%m-%d')
+        if usuario_db.fechaNacimiento else None
+    )
+
+    # Construye el diccionario coherente con los nombres del modelo
+    usuario = {
+        'usuario': usuario_db.usuario,
+        'correo': usuario_db.correo,
+        'rol': usuario_db.rol,
+        'imagen': usuario_db.imagen,
+        'direccion': usuario_db.direccion or 'No especificada',
+        'fechaNacimiento': fecha_nacimiento or 'No especificada'
+    }
+
+    print("DEBUG usuario dict:", usuario)
 
     return render_template('usuario/perfil_usuario.html', usuario=usuario)
+
+
 
 #------------------------------------------------------------------------------------------------------
 @main_bp.route('/editar_imagen_usuario', methods=['POST'])
@@ -174,13 +187,27 @@ def editar_perfil_usuario():
         flash("Usuario no encontrado.", "danger")
         return redirect(url_for('main.perfil_usuario'))
 
-    usuario.usuario = request.form.get('nombre', usuario.usuario)
+    usuario.usuario = request.form.get('usuario', usuario.usuario)
     usuario.correo = request.form.get('email', usuario.correo)
+    usuario.direccion = request.form.get('direccion', usuario.direccion)
+    
+    # Manejar la fecha de nacimiento
+    fecha_str = request.form.get('fechaNacimiento')
+    if fecha_str:
+        try:
+            usuario.fechaNacimiento = datetime.strptime(fecha_str, '%Y-%m-%d')
+        except ValueError:
+            flash("Formato de fecha inválido", "error")
+    
     db.session.commit()
 
-    # Actualiza también la sesión para que muestre los nuevos datos
-    session['user']['nombre'] = usuario.usuario
-    session['user']['correo'] = usuario.correo
+    # Actualiza la sesión con todos los datos
+    session['user'].update({
+        'usuario': usuario.usuario,
+        'correo': usuario.correo,
+        'direccion': usuario.direccion,
+        'fechaNacimiento': usuario.fechaNacimiento.strftime('%Y-%m-%d') if usuario.fechaNacimiento else None
+    })
 
     flash("Perfil actualizado correctamente.", "success")
     return redirect(url_for('main.perfil_usuario'))
@@ -298,15 +325,19 @@ def demo_login():
         username = request.form.get('usuario')
         password = request.form.get('password')
 
+        # Buscar usuario por nombre de usuario
         usuario = Usuario.query.filter_by(usuario=username).first()
         if usuario and check_password_hash(usuario.contrasena, password):
-            session['rol'] = getattr(usuario, 'rol', 'Usuario estándar')
+            # Asegurarse de que todos los datos de sesión vengan de la BD
+            session['rol'] = usuario.rol
             session['user'] = {
-    "id": usuario.idUsuario,   # 🔹 Añadimos el ID del usuario
-    "nombre": usuario.usuario,
-    "correo": usuario.correo,
-    "rol": getattr(usuario, 'rol', 'Usuario estándar')
-}
+                "id": usuario.idUsuario,
+                "usuario": usuario.usuario,
+                "correo": usuario.correo,
+                "rol": usuario.rol,
+                "imagen": usuario.imagen
+            }
+            print("DEBUG Login exitoso:", session['user'])  # Debug
 
         
             if getattr(usuario, 'rol', '') == "Administrador":
