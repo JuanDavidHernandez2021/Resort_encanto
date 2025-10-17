@@ -1,106 +1,167 @@
 {% extends 'usuario/base.html' %}
 
 {% block content %}
-
-<br>
-<br>
+<br><br>
 
 <div class="container mt-5">
-    <div class="row" id="habitaciones-usuario">
-        {% for h in habitaciones %}
-        <div class="col-md-4 mb-4">
-            <div class="card habitacion-card estado-{{ h.estado|lower }}" 
-                 style="min-height: 420px; max-height: 420px; display: flex; flex-direction: column; justify-content: space-between;">
-                
-                <!-- Imagen -->
-                <img src="{{ url_for('static', filename=h.imagen if h.imagen else 'img/default.jpg') }}" 
-                     class="card-img-top" 
-                     alt="{{ h.nombre }}" 
-                     style="height: 200px; object-fit: cover;">
+  <div class="row" id="habitaciones-usuario">
+    {% for h in habitaciones %}
+    <div class="col-md-4 mb-4">
+      <div class="card habitacion-card estado-{{ h.estado|lower }}" 
+           style="min-height: 420px; max-height: 420px; display: flex; flex-direction: column; justify-content: space-between;">
+        
+        <!-- Imagen principal -->
+        <img src="{{ url_for('static', filename=h.imagen if h.imagen else 'img/default.jpg') }}" 
+             class="card-img-top" 
+             alt="{{ h.nombre }}" 
+             style="height: 200px; object-fit: cover;">
 
-                <!-- Contenido -->
-                <div class="card-body" style="flex: 1 1 auto;">
-                    <h5 class="card-title">{{ h.nombre }}</h5>
-                    <p class="card-text">
-                        Cupo: {{ h.cupo_personas }} <br>
-                        Precio: ${{ '{:,.0f}'.format(h.precio) }} COP
-                    </p>
+        <!-- Contenido -->
+        <div class="card-body">
+          <h5 class="card-title">{{ h.nombre }}</h5>
+          <p class="card-text">
+            Cupo: {{ h.cupo_personas }} <br>
+            Precio: ${{ '{:,.0f}'.format(h.precio) }} COP
+          </p>
 
-                    <!-- Estado -->
-                    <span class="badge estado-label {{ h.estado|lower }}">{{ h.estado }}</span>
+          <!-- Estado -->
+          <span class="badge estado-label {{ h.estado|lower }}">{{ h.estado }}</span>
 
-                    <!-- Botón Leer más -->
-                    <button type="button" class="btn btn-link p-0 mt-2" data-bs-toggle="modal" data-bs-target="#modalHabitacion{{ h.id }}">
-                        Leer más
-                    </button>
+          <!-- Botón Leer más -->
+          <button type="button" class="btn btn-link p-0 mt-2" 
+                  data-bs-toggle="modal" 
+                  data-bs-target="#modalHabitacion{{ h.id }}">
+            Leer más
+          </button>
 
-                    <!-- Botón Reservar (solo si está disponible) -->
-                    <div class="mt-3">
-                        {% if h.estado == "Disponible" %}
-                            <a href="{{ url_for('hospedaje_usuario.reservar_habitacion', habitacion_id=h.id) }}" 
-                               class="btn btn-success btn-sm">
-                                Reservar
-                            </a>
-                        {% else %}
-                            <button class="btn btn-secondary btn-sm" disabled>No disponible</button>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
+          <!-- Botón Reservar -->
+          <div class="mt-3">
+            {% if h.estado == "Disponible" %}
+              <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalReserva{{ h.id }}">
+                Reservar
+              </button>
+            {% else %}
+              <button class="btn btn-secondary btn-sm" disabled>No disponible</button>
+            {% endif %}
+          </div>
         </div>
-
-        <!-- Modal -->
-        <div class="modal fade" id="modalHabitacion{{ h.id }}" tabindex="-1" aria-labelledby="modalHabitacionLabel{{ h.id }}" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="modalHabitacionLabel{{ h.id }}">{{ h.nombre }}</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                    </div>
-                    <div class="modal-body">
-                        <img src="{{ url_for('static', filename=h.imagen if h.imagen else 'img/default.jpg') }}" 
-                             class="img-fluid mb-3" alt="{{ h.nombre }}">
-                        <p><strong>Cupo:</strong> {{ h.cupo_personas }}</p>
-                        <p><strong>Precio:</strong> ${{ '{:,.0f}'.format(h.precio) }} COP</p>
-                        <p><strong>Estado:</strong> {{ h.estado }}</p>
-                        {% if h.descripcion %}
-                            <p><strong>Descripción:</strong> {{ h.descripcion }}</p>
-                        {% else %}
-                            <p><strong>Descripción:</strong> <span class="text-muted">Sin descripción</span></p>
-                        {% endif %}
-                    </div>
-                    <div class="modal-footer">
-                        {% if h.estado == "Disponible" %}
-                            <a href="{{ url_for('hospedaje_usuario.reservar_habitacion', habitacion_id=h.id) }}" class="btn btn-success">
-                                Reservar
-                            </a>
-                        {% else %}
-                            <button class="btn btn-secondary" disabled>No disponible</button>
-                        {% endif %}
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {% endfor %}
+      </div>
     </div>
+
+    <!-- Modal Leer más -->
+<div class="modal fade" id="modalHabitacion{{ h.id }}" tabindex="-1" aria-labelledby="modalHabitacionLabel{{ h.id }}" aria-hidden="true">
+  <div class="modal-dialog custom-modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="modalHabitacionLabel{{ h.id }}">{{ h.nombre }}</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body text-center">
+        <img src="{{ url_for('static', filename=h.imagen if h.imagen else 'img/default.jpg') }}" 
+             class="img-fluid mb-3 rounded" 
+             alt="{{ h.nombre }}"
+             style="max-height: 220px; object-fit: cover;">
+
+        <div class="text-start mx-auto" style="max-width: 400px;">
+          <p><strong>Cupo:</strong> {{ h.cupo_personas }}</p>
+          <p><strong>Precio:</strong> ${{ '{:,.0f}'.format(h.precio) }} COP</p>
+          <p><strong>Estado:</strong> {{ h.estado }}</p>
+
+          {% if h.descripcion %}
+            <p><strong>Descripción:</strong> {{ h.descripcion }}</p>
+          {% else %}
+            <p><strong>Descripción:</strong> <span class="text-muted">Sin descripción</span></p>
+          {% endif %}
+        </div>
+      </div>
+      <div class="modal-footer justify-content-center">
+        {% if h.estado == "Disponible" %}
+         <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalReserva{{ h.id }}">
+  Reservar
+</button>
+ 
+        {% else %}
+          <button class="btn btn-secondary" disabled>No disponible</button>
+        {% endif %}
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- CSS para estados -->
-<style>
-.estado-label.disponible {
-    background-color: #28a745; /* Verde */
-    color: white;
-}
-.estado-label.ocupado {
-    background-color: #dc3545; /* Rojo */
-    color: white;
-}
-.estado-label.mantenimiento {
-    background-color: #ffc107; /* Amarillo */
-    color: black;
-}
-</style>
+<!-- Modal de Reserva -->
+<div class="modal fade" id="modalReserva{{ h.id }}" tabindex="-1" aria-labelledby="modalReservaLabel{{ h.id }}" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="modalReservaLabel{{ h.id }}">Reservar {{ h.nombre }}</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <div class="modal-body">
+        <form action="{{ url_for('hospedaje_usuario.reservar_habitacion', habitacion_id=h.id) }}" method="POST">
+          
+          <div class="mb-2">
+            <label class="form-label">Nombre completo</label>
+            <input type="text" class="form-control form-control-sm" name="nombre" required>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">Tipo de documento</label>
+            <select class="form-select form-select-sm" name="tipoDocumento" required>
+              <option value="" selected disabled>Seleccione...</option>
+              <option value="CC">Cédula de ciudadanía</option>
+              <option value="TI">Tarjeta de identidad</option>
+              <option value="CE">Cédula de extranjería</option>
+              <option value="PA">Pasaporte</option>
+            </select>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">Número de documento</label>
+            <input type="number" class="form-control form-control-sm" name="numeroDocumento" required>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">Teléfono</label>
+            <input type="text" class="form-control form-control-sm" name="telefono">
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">Correo</label>
+            <input type="email" class="form-control form-control-sm" name="correo">
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">Procedencia</label>
+            <input type="text" class="form-control form-control-sm" name="procedencia">
+          </div>
+
+          <hr class="my-2">
+
+          <!-- 🔹 Check-in / Check-out -->
+          <div class="mb-2">
+            <label class="form-label">Check-in</label>
+            <input type="date" class="form-control form-control-sm" name="fecha_inicio" required>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">Check-out</label>
+            <input type="date" class="form-control form-control-sm" name="fecha_fin" required>
+          </div>
+
+          <button type="submit" class="btn btn-success w-100 mt-2">Confirmar reserva</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+    {% endfor %}
+  </div>
+</div>
+
+<!-- JS de Bootstrap -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 {% endblock %}
