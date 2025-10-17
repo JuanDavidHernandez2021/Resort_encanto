@@ -10,6 +10,9 @@
         <div class="col-md-4 mb-4">
             <div class="card habitacion-card estado-{{ h.estado|lower }}">
                 
+
+
+                
                 <!-- Imagen -->
                 <img src="{{ url_for('static', filename=h.imagen if h.imagen else 'img/default.jpg') }}"
                     class="card-img-top" 
@@ -20,47 +23,73 @@
                 <div class="card-body">
                     <h5 class="card-title">{{ h.nombre }}</h5>
                     <p class="card-text">
-                        Cupo: {{ h.cupo_personas }} <br>
-                        Precio: ${{ '{:,.0f}'.format(h.precio) }} COP
-                    </p>
+    Cupo: {{ h.cupo_personas }} <br>
+    Precio: ${{ '{:,.0f}'.format(h.precio) }} COP
+</p>
 
-                    <!-- Estado -->
-                    <span class="badge estado-label {{ h.estado|lower }}">{{ h.estado }}</span>
+{% if h.descripcion %}
+    <p class="text-muted" style="font-size: 0.9rem;">
+        {{ h.descripcion[:80] }}{% if h.descripcion|length > 80 %}...{% endif %}
+    </p>
+{% else %}
+    <p class="text-muted" style="font-size: 0.9rem;">Sin descripción</p>
+{% endif %}
 
-                    <!-- Botón Leer más -->
-                    <button type="button" class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#modalHabitacion{{ h.id }}">
-                        Leer más
-                    </button>
+<!-- Estado -->
+<span class="badge estado-label {{ h.estado|lower }}">{{ h.estado }}</span>
+
+<!-- Botón Leer más -->
+<button type="button" class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#modalHabitacion{{ h.id }}">
+    Leer más
+</button>
+
                 </div>
             </div>
 
             <!-- Modal -->
-            <div class="modal fade" id="modalHabitacion{{ h.id }}" tabindex="-1" aria-labelledby="modalHabitacionLabel{{ h.id }}" aria-hidden="true">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="modalHabitacionLabel{{ h.id }}">{{ h.nombre }}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                        </div>
-                        <div class="modal-body">
-                            <img src="{{ url_for('static', filename=h.imagen if h.imagen else 'img/default.jpg') }}" 
-                                class="img-fluid mb-3" 
-                                alt="{{ h.nombre }}">
-                            <p><strong>Cupo:</strong> {{ h.cupo_personas }}</p>
-                            <p><strong>Precio:</strong> ${{ '{:,.0f}'.format(h.precio) }} COP</p>
-                            <p><strong>Estado:</strong> {{ h.estado }}</p>
-                            {% if h.descripcion %}
-                                <p><strong>Descripción:</strong> {{ h.descripcion }}</p>
-                            {% else %}
-                                <p><strong>Descripción:</strong> <span class="text-muted">Sin descripción</span></p>
-                            {% endif %}
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+<!-- Modal -->
+<div class="modal fade" id="modalHabitacion{{ h.id }}" tabindex="-1" aria-labelledby="modalHabitacionLabel{{ h.id }}" aria-hidden="true">
+  <div class="modal-dialog custom-modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow-lg border-0">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="modalHabitacionLabel{{ h.id }}">{{ h.nombre }}</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+
+      <div class="modal-body text-center">
+        <!-- Imagen -->
+        <img src="{{ url_for('static', filename=h.imagen if h.imagen else 'img/default.jpg') }}" 
+             class="img-fluid rounded mb-3"
+             alt="{{ h.nombre }}"
+             style="max-height: 220px; object-fit: cover;">
+
+        <!-- Información -->
+        <div class="text-start mx-auto" style="max-width: 400px;">
+          {% if h.descripcion %}
+            <p><strong>Descripción:</strong> {{ h.descripcion }}</p>
+          {% else %}
+            <p><strong>Descripción:</strong> <span class="text-muted">Sin descripción</span></p>
+          {% endif %}
+          
+          <p><strong>Cupo:</strong> {{ h.cupo_personas }}</p>
+          <p><strong>Precio:</strong> ${{ '{:,.0f}'.format(h.precio) }} COP</p>
+          <p><strong>Estado:</strong> 
+            <span class="badge bg-{% if h.estado|lower == 'disponible' %}success{% else %}danger{% endif %}">
+              {{ h.estado }}
+            </span>
+          </p>
+        </div>
+      </div>
+
+      <div class="modal-footer justify-content-center">
+        <button type="button" class="btn btn-outline-light text-dark border" data-bs-dismiss="modal">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
         </div>
         {% endfor %}
