@@ -968,3 +968,30 @@ body {
 }
 /*--------------------------------------------------*/
 
+/* ====== Colores de estados de habitaciones ====== */
+.estado-label {
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  color: white;
+}
+
+/* Estado: Disponible → verde */
+.estado-label.disponible {
+  background-color: #28a745; /* verde */
+}
+
+/* Estado: Ocupado → rojo */
+.estado-label.ocupado {
+  background-color: #dc3545; /* rojo */
+}
+
+/* Estado: Mantenimiento (si llegas a usarlo) → gris */
+.estado-label.mantenimiento {
+  background-color: #f1e905;
+}
+.modal-body img {
+  max-height: 250px;
+  object-fit: cover;
+  border-radius: 8px;
+}
