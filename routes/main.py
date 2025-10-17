@@ -349,3 +349,44 @@ def demo_login():
             return redirect(url_for('main.demo_login'))
 
     return render_template('home/Login.html')
+
+
+# -------------------------------------------------------------
+# Ruta para agregar nueva habitación (Administrador)
+# -------------------------------------------------------------
+@main_bp.route('/hospedaje_nueva', methods=['POST'])
+def hospedaje_nueva():
+    nombre = request.form.get('nombre')
+    precio = request.form.get('precio')
+    cupo_personas = request.form.get('cupo_personas')
+    estado = request.form.get('estado')
+    descripcion = request.form.get('descripcion')
+    imagen = request.files.get('imagen')
+
+    # Validar que hay una imagen
+    if not imagen or imagen.filename == '':
+        flash('Debes seleccionar una imagen para la habitación.', 'warning')
+        return redirect(url_for('main.hospedaje_admin'))
+
+    # Guardar imagen en /static/img/
+    filename = secure_filename(imagen.filename)
+    upload_dir = os.path.join(current_app.root_path, 'static', 'img')
+    os.makedirs(upload_dir, exist_ok=True)
+    save_path = os.path.join(upload_dir, filename)
+    imagen.save(save_path)
+
+    # Guardar en BD (solo ruta relativa a /static/)
+    nueva = nuevaHabitacion(
+        nombre=nombre,
+        precio=precio,
+        cupo_personas=cupo_personas,
+        estado=estado,
+        descripcion=descripcion,
+        imagen=f"img/{filename}"  # ✅ clave: solo "img/..."
+    )
+
+    db.session.add(nueva)
+    db.session.commit()
+
+    flash('Habitación agregada correctamente.', 'success')
+    return redirect(url_for('main.hospedaje_admin'))
