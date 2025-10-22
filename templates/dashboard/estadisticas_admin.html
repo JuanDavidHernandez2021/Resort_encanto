@@ -1,0 +1,227 @@
+{% extends 'dashboard/base.html' %}
+
+{% block content %}
+<div class="container mt-5 pt-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold">
+      <i class="bi bi-bar-chart-fill text-info"></i> Estadísticas del Resort
+    </h2>
+    <a href="{{ url_for('main.hospedaje_admin') }}" class="btn btn-secondary">
+      <i class="bi bi-arrow-left"></i> Volver
+    </a>
+  </div>
+
+  <!-- Tarjetas de resumen -->
+  <div class="row mb-4">
+    <div class="col-md-3 mb-3">
+      <div class="card text-center shadow-sm border-0" style="border-left: 4px solid #0d6efd !important;">
+        <div class="card-body">
+          <i class="bi bi-door-closed-fill fs-1 text-primary"></i>
+          <h3 class="mt-2 fw-bold">{{ total_habitaciones }}</h3>
+          <p class="text-muted mb-0">Total Habitaciones</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+      <div class="card text-center shadow-sm border-0" style="border-left: 4px solid #198754 !important;">
+        <div class="card-body">
+          <i class="bi bi-check-circle-fill fs-1 text-success"></i>
+          <h3 class="mt-2 fw-bold">{{ habitaciones_disponibles }}</h3>
+          <p class="text-muted mb-0">Disponibles</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+      <div class="card text-center shadow-sm border-0" style="border-left: 4px solid #dc3545 !important;">
+        <div class="card-body">
+          <i class="bi bi-x-circle-fill fs-1 text-danger"></i>
+          <h3 class="mt-2 fw-bold">{{ habitaciones_ocupadas }}</h3>
+          <p class="text-muted mb-0">Ocupadas</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+      <div class="card text-center shadow-sm border-0" style="border-left: 4px solid #ffc107 !important;">
+        <div class="card-body">
+          <i class="bi bi-wrench fs-1 text-warning"></i>
+          <h3 class="mt-2 fw-bold">{{ habitaciones_mantenimiento }}</h3>
+          <p class="text-muted mb-0">Mantenimiento</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tarjetas adicionales -->
+  <div class="row mb-4">
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm border-0">
+        <div class="card-body text-center">
+          <i class="bi bi-people-fill fs-1 text-info"></i>
+          <h3 class="mt-2 fw-bold">{{ total_huespedes }}</h3>
+          <p class="text-muted mb-0">Total de Huéspedes</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm border-0">
+        <div class="card-body text-center">
+          <i class="bi bi-percent fs-1 text-primary"></i>
+          <h3 class="mt-2 fw-bold">{{ porcentaje_ocupacion }}%</h3>
+          <p class="text-muted mb-0">Porcentaje de Ocupación</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4 mb-3">
+      <div class="card shadow-sm border-0" style="border-left: 4px solid #28a745 !important;">
+        <div class="card-body text-center">
+          <i class="bi bi-currency-dollar fs-1 text-success"></i>
+          <h3 class="mt-2 fw-bold">${{ ingresos_totales }}</h3>
+          <p class="text-muted mb-0">Ingresos Totales</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráfico de ocupación -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-light">
+          <h5 class="mb-0"><i class="bi bi-graph-up"></i> Estado de Habitaciones</h5>
+        </div>
+        <div class="card-body">
+          <div class="progress" style="height: 30px;">
+            <div class="progress-bar bg-success" role="progressbar" 
+                 style="width: {{ (habitaciones_disponibles / total_habitaciones * 100) if total_habitaciones > 0 else 0 }}%"
+                 aria-valuenow="{{ habitaciones_disponibles }}" 
+                 aria-valuemin="0" 
+                 aria-valuemax="{{ total_habitaciones }}">
+              Disponibles: {{ habitaciones_disponibles }}
+            </div>
+            <div class="progress-bar bg-danger" role="progressbar" 
+                 style="width: {{ (habitaciones_ocupadas / total_habitaciones * 100) if total_habitaciones > 0 else 0 }}%"
+                 aria-valuenow="{{ habitaciones_ocupadas }}" 
+                 aria-valuemin="0" 
+                 aria-valuemax="{{ total_habitaciones }}">
+              Ocupadas: {{ habitaciones_ocupadas }}
+            </div>
+            <div class="progress-bar bg-warning" role="progressbar" 
+                 style="width: {{ (habitaciones_mantenimiento / total_habitaciones * 100) if total_habitaciones > 0 else 0 }}%"
+                 aria-valuenow="{{ habitaciones_mantenimiento }}" 
+                 aria-valuemin="0" 
+                 aria-valuemax="{{ total_habitaciones }}">
+              Mantenimiento: {{ habitaciones_mantenimiento }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Habitaciones ocupadas actualmente -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-light">
+          <h5 class="mb-0"><i class="bi bi-door-open-fill"></i> Habitaciones Ocupadas Actualmente</h5>
+        </div>
+        <div class="card-body">
+          {% if habitaciones_ocupadas_lista %}
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Nombre</th>
+                  <th>Precio</th>
+                  <th>Capacidad</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for hab in habitaciones_ocupadas_lista %}
+                <tr>
+                  <td>{{ hab.id }}</td>
+                  <td>{{ hab.nombre }}</td>
+                  <td>${{ hab.precio }}</td>
+                  <td>{{ hab.cupo_personas }} personas</td>
+                  <td><span class="badge bg-danger">Ocupada</span></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="alert alert-info text-center" role="alert">
+            <i class="bi bi-info-circle-fill"></i> No hay habitaciones ocupadas actualmente.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Historial de estadísticas -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-light">
+          <h5 class="mb-0">
+            <i class="bi bi-graph-up"></i> Historial de Estadísticas (Últimos 7 días)
+          </h5>
+        </div>
+        <div class="card-body">
+          {% if estadisticas_historial %}
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Total Habitaciones</th>
+                  <th>Ocupadas</th>
+                  <th>Disponibles</th>
+                  <th>Huéspedes</th>
+                  <th>Ingresos</th>
+                  <th>% Ocupación</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for est in estadisticas_historial %}
+                <tr>
+                  <td>{{ est.fecha.strftime('%d/%m/%Y') }}</td>
+                  <td>{{ est.total_habitaciones }}</td>
+                  <td><span class="badge bg-danger">{{ est.habitaciones_ocupadas }}</span></td>
+                  <td><span class="badge bg-success">{{ est.habitaciones_disponibles }}</span></td>
+                  <td>{{ est.total_huespedes }}</td>
+                  <td class="text-success fw-bold">${{ est.ingresos_totales }}</td>
+                  <td>
+                    <div class="progress" style="height: 20px;">
+                      <div class="progress-bar bg-primary" role="progressbar" 
+                           style="width: {{ est.ocupacion_porcentaje }}%;" 
+                           aria-valuenow="{{ est.ocupacion_porcentaje }}" 
+                           aria-valuemin="0" aria-valuemax="100">
+                        {{ est.ocupacion_porcentaje }}%
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+          <div class="alert alert-info text-center" role="alert">
+            <i class="bi bi-info-circle-fill"></i> No hay historial de estadísticas disponible.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

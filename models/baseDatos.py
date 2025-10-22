@@ -75,9 +75,11 @@ class Huesped(db.Model):
     procedencia = db.Column(db.String(100), nullable=True)
     nuevaHabitacion_id = db.Column(db.Integer, db.ForeignKey("nuevaHabitacion.id"), nullable=False)
     
+    # Relación con nuevaHabitacion
+    habitacion = db.relationship('nuevaHabitacion', backref='huespedes', lazy=True)
 
     def __repr__(self):
-        return f"<Huesped {self.nombre} en habitacionHuesped {self.habitacionHuesped_id}>"
+        return f"<Huesped {self.nombre} en habitacion {self.nuevaHabitacion_id}>"
     
 
 
@@ -95,3 +97,21 @@ class Restaurante(db.Model):
     def __repr__(self):
     return f"<Restaurante {self.nombre}>"
     """
+
+# ------------------------------
+# Tabla de Estadísticas
+# ------------------------------
+class Estadistica(db.Model):
+    __tablename__ = "estadistica"
+
+    idEstadistica = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    fecha = db.Column(db.Date, nullable=False, default=datetime.utcnow)
+    total_habitaciones = db.Column(db.Integer, nullable=False, default=0)
+    habitaciones_ocupadas = db.Column(db.Integer, nullable=False, default=0)
+    habitaciones_disponibles = db.Column(db.Integer, nullable=False, default=0)
+    total_huespedes = db.Column(db.Integer, nullable=False, default=0)
+    ingresos_totales = db.Column(db.Float, nullable=False, default=0.0)
+    ocupacion_porcentaje = db.Column(db.Float, nullable=False, default=0.0)
+
+    def __repr__(self):
+        return f"<Estadistica {self.fecha} - Ocupación: {self.ocupacion_porcentaje}%>"

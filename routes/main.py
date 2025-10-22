@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, current_app, flash
 from datetime import datetime
-from models.baseDatos import db,nuevaHabitacion, Usuario
+from models.baseDatos import db, nuevaHabitacion, Usuario, Huesped, Estadistica
 import os
 from werkzeug.utils import secure_filename
 from flask import current_app
@@ -246,6 +246,86 @@ def experiencias_admin():
 @main_bp.route('/nosotros_admin')
 def nosotros_admin():
     return render_template('dashboard/nosotros_admin.html')
+
+@main_bp.route('/huesped_admin')
+def ver_huespedes():
+    huespedes = Huesped.query.all()
+    return render_template('dashboard/huesped_admin.html', huespedes=huespedes)
+
+@main_bp.route('/huesped_admin/eliminar/<int:huesped_id>', methods=['POST'])
+def eliminar_huesped(huesped_id):
+    huesped = Huesped.query.get_or_404(huesped_id)
+    
+    # Obtener la habitación asociada para cambiar su estado a Disponible
+    habitacion = nuevaHabitacion.query.get(huesped.nuevaHabitacion_id)
+    if habitacion:
+        habitacion.estado = "Disponible"
+    
+    # Eliminar el huésped
+    db.session.delete(huesped)
+    db.session.commit()
+    
+    flash('Huésped eliminado exitosamente. La habitación ahora está disponible.', 'success')
+    return redirect(url_for('main.ver_huespedes'))
+
+@main_bp.route('/estadisticas')
+def estadisticas():
+    # Obtener estadísticas generales
+    total_habitaciones = nuevaHabitacion.query.count()
+    habitaciones_disponibles = nuevaHabitacion.query.filter_by(estado='Disponible').count()
+    habitaciones_ocupadas = nuevaHabitacion.query.filter_by(estado='Ocupada').count()
+    habitaciones_mantenimiento = nuevaHabitacion.query.filter_by(estado='Mantenimiento').count()
+    
+    total_huespedes = Huesped.query.count()
+    
+    # Calcular porcentajes
+    porcentaje_ocupacion = (habitaciones_ocupadas / total_habitaciones * 100) if total_habitaciones > 0 else 0
+    
+    # Calcular ingresos totales (suma de precios de habitaciones ocupadas)
+    ingresos_totales = sum([h.precio for h in nuevaHabitacion.query.filter_by(estado='Ocupada').all()])
+    
+    # Guardar estadísticas en la base de datos
+    estadistica_hoy = Estadistica.query.filter_by(fecha=datetime.utcnow().date()).first()
+    
+    if estadistica_hoy:
+        # Actualizar estadísticas del día
+        estadistica_hoy.total_habitaciones = total_habitaciones
+        estadistica_hoy.habitaciones_ocupadas = habitaciones_ocupadas
+        estadistica_hoy.habitaciones_disponibles = habitaciones_disponibles
+        estadistica_hoy.total_huespedes = total_huespedes
+        estadistica_hoy.ingresos_totales = ingresos_totales
+        estadistica_hoy.ocupacion_porcentaje = round(porcentaje_ocupacion, 2)
+    else:
+        # Crear nuevo registro de estadísticas
+        estadistica_hoy = Estadistica(
+            fecha=datetime.utcnow().date(),
+            total_habitaciones=total_habitaciones,
+            habitaciones_ocupadas=habitaciones_ocupadas,
+            habitaciones_disponibles=habitaciones_disponibles,
+            total_huespedes=total_huespedes,
+            ingresos_totales=ingresos_totales,
+            ocupacion_porcentaje=round(porcentaje_ocupacion, 2)
+        )
+        db.session.add(estadistica_hoy)
+    
+    db.session.commit()
+    
+    # Obtener habitaciones con más reservas (las que están ocupadas actualmente)
+    habitaciones_ocupadas_lista = nuevaHabitacion.query.filter_by(estado='Ocupada').all()
+    
+    # Obtener historial de estadísticas (últimos 7 días)
+    estadisticas_historial = Estadistica.query.order_by(Estadistica.fecha.desc()).limit(7).all()
+    
+    return render_template('dashboard/estadisticas_admin.html', 
+                         total_habitaciones=total_habitaciones,
+                         habitaciones_disponibles=habitaciones_disponibles,
+                         habitaciones_ocupadas=habitaciones_ocupadas,
+                         habitaciones_mantenimiento=habitaciones_mantenimiento,
+                         total_huespedes=total_huespedes,
+                         porcentaje_ocupacion=round(porcentaje_ocupacion, 2),
+                         ingresos_totales=ingresos_totales,
+                         habitaciones_ocupadas_lista=habitaciones_ocupadas_lista,
+                         estadisticas_historial=estadisticas_historial)
 
 @main_bp.route('/hospedaje_admin/eliminar/<int:habitacion_id>', methods=['POST'])
 def eliminar_habitacion_admin(habitacion_id):

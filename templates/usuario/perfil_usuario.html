@@ -5,122 +5,54 @@
   <title>Perfil de Usuario</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-
   <style>
-    body {
-      background-image: url("{{ url_for('static', filename='img/perfil1.jpg') }}");
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      background-attachment: fixed;
-      font-family: "Inter", system-ui, sans-serif;
-      padding: 60px 15px;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      min-height: 100vh;
-    }
-
-    .profile-card {
-      background: rgba(226, 221, 221, 0.94);
-      border-radius: 20px;
-      box-shadow: 0 6px 24px rgba(0,0,0,0.12);
-      max-width: 400px; /* 🔹 más angosta */
-      width: 100%;
-      padding: 30px;
-      text-align: center;
-      position: relative;
-    }
-
-    .avatar {
-      width: 110px;
-      height: 110px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 4px solid #ddd9d9ff;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.25);
-    }
-
-    .edit-btn {
-      position: absolute;
-      bottom: 5px;
-      right: 10px;
-      background: #f4f0f0ff;
-      border-radius: 50%;
-      border: none;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      width: 38px;
-      height: 38px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    h3 {
-      margin-top: 15px;
-      font-weight: 700;
-      color: #0f4d44;
-    }
-
-    p {
-      margin-bottom: 6px;
-    }
-
-    .btn-follow {
-      border-radius: 12px;
-      padding: 8px 18px;
-      margin-top: 15px;
-      background-color: #1459edff;
-      border: none;
-      color: white;
-    }
-
-    .btn-follow:hover {
-      background-color: #1f78deff;
-    }
-
-    .logout-btn {
-      position: absolute;
-      right: 20px;
-      top: 20px;
-      font-size: 0.9rem;
+    /* Efecto de hover en el botón de cámara */
+    .btn-cambiar-imagen:hover i {
+      color: #0d6efd;
+      transform: scale(1.15);
+      transition: all 0.2s ease;
     }
   </style>
 </head>
-
 <body>
-  <div class="profile-card">
-    <a href="{{ url_for('main.logout') }}" class="btn btn-primary logout-btn">Cerrar sesión</a>
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-md-7 col-lg-6">
+        <div class="card rounded-4 shadow-lg p-4 position-relative">
+          <a href="{{ url_for('main.logout') }}" class="btn btn-light position-absolute end-0 top-0 m-3">Cerrar sesión</a>
+          
+          <!-- Sección Avatar -->
+<div class="d-flex flex-column align-items-center mb-4">
+  <div style="position:relative;">
+    <span style="display:block;width:130px;height:130px;background:#e3f2fd;border-radius:50%;box-shadow:0 0 0 8px #1673ff44,0 4px 16px #1673ff22;position:relative;">
+      
+      <!-- Imagen del usuario o avatar por defecto -->
+  <img src="{{ url_for('static', filename='img/usuarios/' + (usuario.imagen if usuario.imagen else 'avatar.png')) }}"
+    alt="Avatar"
+    style="width:110px;height:110px;border-radius:50%;object-fit:cover; position:absolute;top:10px;left:10px;">
 
-
-    <div class="d-flex flex-column align-items-center mb-4">
-      <div class="position-relative">
-        <img src="{{ url_for('static', filename='img/usuarios/' + (usuario.imagen if usuario.imagen else 'avatar.png')) }}" alt="Avatar" class="avatar">
-        <button type="button" class="edit-btn" data-bs-toggle="modal" data-bs-target="#modalEditarImagen">
-          <i class="bi bi-camera-fill text-primary"></i>
-        </button>
-      </div>
-
-      <h3>{{ usuario.usuario }}</h3>
-      <p class="text-muted mb-1">@{{ usuario.usuario.lower().replace(' ', '_') }}</p>
-      <p class="text-secondary mb-1">{{ usuario.rol or 'Usuario' }}</p>
-      <p class="small text-muted mb-0">
-        {{ usuario.direccion or 'Sin dirección registrada' }}<br>
-        {% if usuario.fechaNacimiento %}<small>Nacido el {{ usuario.fechaNacimiento }}</small>{% endif %}
-      </p>
-
-      <button class="btn btn-follow" data-bs-toggle="modal" data-bs-target="#modalEditar">Editar</button>
-    </div>
+      
+      <!-- Botón con ícono de cámara -->
+      <button type="button" 
+              class="btn btn-light border position-absolute shadow-sm btn-cambiar-imagen" 
+              style="bottom:10px;right:10px;border-radius:50%;width:42px;height:42px;
+                    display:flex;align-items:center;justify-content:center;
+                    background-color:white;"
+              data-bs-toggle="modal" data-bs-target="#modalEditarImagen"
+              title="Cambiar imagen de perfil">
+        <i class="bi bi-camera-fill text-primary fs-5"></i>
+      </button>
+    </span>
   </div>
 
-  <!-- Modal editar imagen -->
+  <!-- Modal para editar imagen -->
   <div class="modal fade" id="modalEditarImagen" tabindex="-1" aria-labelledby="modalEditarImagenLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <form method="POST" action="{{ url_for('main.editar_imagen_usuario') }}" enctype="multipart/form-data">
           <div class="modal-header">
-            <h5 class="modal-title">Editar imagen de perfil</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <h5 class="modal-title" id="modalEditarImagenLabel">Editar imagen de perfil</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
           </div>
           <div class="modal-body">
             <input type="file" class="form-control" name="imagen" accept="image/*" required>
@@ -133,15 +65,49 @@
       </div>
     </div>
   </div>
+</div>
 
-  <!-- Modal editar perfil -->
+
+          <!-- Datos del perfil -->
+          <h2 class="fw-bold mb-4">Perfil</h2>
+          <form>
+            <div class="mb-3">
+              <label class="form-label">Nombre</label>
+              <input type="text" class="form-control form-control-lg" value="{{ usuario.usuario }}" readonly>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Correo</label>
+              <input type="email" class="form-control form-control-lg" value="{{ usuario.correo }}" readonly>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Dirección</label>
+              <input type="text" class="form-control form-control-lg" value="{{ usuario.direccion }}" readonly>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Fecha de Nacimiento</label>
+              <input type="date" class="form-control form-control-lg" value="{{ usuario.fechaNacimiento if usuario.fechaNacimiento != 'No especificada' else '' }}" readonly>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Rol</label>
+              <input type="text" class="form-control form-control-lg text-primary fw-bold bg-light" value="{{ usuario.rol or 'Administrador' }}" readonly>
+            </div>
+            <div class="d-flex justify-content-end mt-4">
+              <button type="button" class="btn btn-primary px-4" data-bs-toggle="modal" data-bs-target="#modalEditar">Editar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de edición de datos -->
   <div class="modal fade" id="modalEditar" tabindex="-1" aria-labelledby="modalEditarLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <form method="POST" action="{{ url_for('main.editar_perfil_usuario') }}">
           <div class="modal-header">
-            <h5 class="modal-title">Editar Perfil</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <h5 class="modal-title" id="modalEditarLabel">Editar Perfil</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
           </div>
           <div class="modal-body">
             <div class="mb-3">

@@ -98,6 +98,9 @@ from routes.dashboard.admin import admin_bp
 from routes.recuperar_contraseña import recuperar_bp
 from routes.usuario.hospedaje_usuario_routes import hospedaje_usuario_bp
 from routes.usuario.perfil_usuario_routes import perfil_usuario_bp
+# from routes.huesped_admin_routes import huesped_admin_bp  # Archivo no existe
+
+
 
 
 app.register_blueprint(registro_bp, url_prefix='/registro')
@@ -107,7 +110,7 @@ app.register_blueprint(admin_bp, url_prefix='/admin')  # ✅ Registrar blueprint
 app.register_blueprint(recuperar_bp, url_prefix='/recuperar')
 app.register_blueprint(hospedaje_usuario_bp, url_prefix='/hospedaje')
 app.register_blueprint(perfil_usuario_bp, url_prefix='/perfil')
-
+# app.register_blueprint(huesped_admin_bp)  # Archivo no existe
 
 
 # ------------------- Aliases de Rutas (compatibilidad con plantillas) -------------------

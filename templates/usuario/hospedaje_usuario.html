@@ -3,6 +3,18 @@
 {% block content %}
 <br><br>
 
+<!-- 🔹 Mensajes de alerta (flash) -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} mt-2 text-center">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+
 <div class="container mt-5">
   <div class="row" id="habitaciones-usuario">
     {% for h in habitaciones %}
