@@ -7,82 +7,197 @@
 <br>
     <!-- Encabezado -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Restaurante - Administración</h2>
+        <h2><i class="bi bi-cup-hot-fill"></i> Restaurante - Administración</h2>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('admin.admin_pedidos') }}" class="btn btn-info">
+                <i class="bi bi-receipt"></i> Ver Pedidos
+            </a>
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalNuevoPlato">
+                <i class="bi bi-plus-circle"></i> Agregar Plato
+            </button>
+        </div>
     </div>
+
+    <!-- Mensajes Flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 
     <!-- Tabla de platos -->
     <h4>📋 Platos registrados</h4>
-    <table class="table mt-3">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Plato</th>
-                <th>Categoria</th>
-                <th>Precio</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for p in platos %}
-            <tr>
-                <td>{{ p.id }}</td>
-                <td>{{ p.nombre }}</td>
-                <td>{{ p.categoria }}</td>
-                <td>${{ '%.2f'|format(p.precio) }}</td>
-                <td class="text-end">
-                    <a href="{{ url_for('admin.admin_restaurante_editar', plato_id=p.id) }}" class="btn btn-sm btn-primary me-2">Editar</a>
+    
+    <div class="row mt-3">
+    {% for p in platos %}
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100">
+                {% if p.imagen %}
+                <img src="{{ url_for('static', filename='img/platos/' + p.imagen) }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ p.nombre }}">
+                {% else %}
+                <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">
+                    <i class="bi bi-image" style="font-size: 3rem;"></i>
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ p.nombre }}</h5>
+                    
+                    <p class="card-text">{{ p.descripcion or 'Sin descripción' }}</p>
+                    <h4 class="text-success">${{ p.precio|co_pesos }}</h4>
+                </div>
+                <div class="card-footer bg-white border-0 d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalEditarPlato"
+                            data-plato-id="{{ p.id }}"
+                            data-plato-nombre="{{ p.nombre }}"
+                            data-plato-descripcion="{{ p.descripcion }}"
+                            data-plato-precio="{{ p.precio }}"
+                            data-plato-imagen="{{ p.imagen }}">
+                        <i class="bi bi-pencil-fill"></i> Editar
+                    </button>
                     <form method="POST" action="{{ url_for('admin.admin_restaurante_eliminar', plato_id=p.id) }}" style="display:inline-block;">
-                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este plato?');">Eliminar</button>
+                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Eliminar este plato?');">
+                            <i class="bi bi-trash-fill"></i> Eliminar
+                        </button>
                     </form>
-                </td>
-            </tr>
-        {% else %}
-            <tr><td colspan="5" class="text-center">No hay platos registrados.</td></tr>
-        {% endfor %}
-        </tbody>
-    </table>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="col-12">
+            <div class="alert alert-info text-center" role="alert">
+                <i class="bi bi-info-circle-fill"></i> No hay platos registrados aún.
+            </div>
+        </div>
+    {% endfor %}
+    </div>
 
-    <hr class="my-4">
-
-    <!-- Formulario Nuevo Plato -->
-    <h4>➕ Crear nuevo plato</h4>
-    <form method="POST" action="{{ url_for('admin.admin_restaurante_nuevo') }}" class="mt-3">
-        <div class="mb-3">
-            <label class="form-label">Nombre</label>
-            <input class="form-control" name="nombre" required>
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Categoria</label>
-            <input class="form-control" name="categoria">
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Precio</label>
-            <input class="form-control" name="precio" type="number" required>
-        </div>
-        <button class="btn btn-success" type="submit">Crear</button>
-    </form>
-
-    <hr class="my-4">
-
-    <!-- Formulario Editar Plato -->
-    {% if plato %}
-    <h4>✏️ Editar plato</h4>
-    <form method="POST" action="{{ url_for('admin.admin_restaurante_editar', plato_id=plato.id) }}" class="mt-3">
-        <div class="mb-3">
-            <label class="form-label">Nombre</label>
-            <input class="form-control" name="nombre" value="{{ plato.nombre }}" required>
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Categoria</label>
-            <input class="form-control" name="categoria" value="{{ plato.categoria }}">
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Precio</label>
-            <input class="form-control" name="precio" type="number" value="{{ plato.precio }}" required>
-        </div>
-        <button class="btn btn-primary" type="submit">Guardar</button>
-    </form>
-    {% endif %}
-
+    </div>
 </div>
+
+<!-- Modal Nuevo Plato -->
+<div class="modal fade" id="modalNuevoPlato" tabindex="-1" aria-labelledby="modalNuevoPlatoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('admin.admin_restaurante_nuevo') }}" enctype="multipart/form-data">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalNuevoPlatoLabel">
+                        <i class="bi bi-plus-circle"></i> Nuevo Plato
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre del Plato</label>
+                        <input class="form-control" name="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" name="descripcion" rows="3" placeholder="Describe el plato..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Precio ($)</label>
+                        <input class="form-control" name="precio" type="number" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Imagen del Plato</label>
+                        <input class="form-control" name="imagen" type="file" accept="image/*">
+                        <small class="text-muted">Formatos permitidos: JPG, PNG, GIF</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button class="btn btn-success" type="submit">
+                        <i class="bi bi-check-circle"></i> Guardar Plato
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Plato -->
+<div class="modal fade" id="modalEditarPlato" tabindex="-1" aria-labelledby="modalEditarPlatoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="" id="formEditarPlato" enctype="multipart/form-data">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalEditarPlatoLabel">
+                        <i class="bi bi-pencil-square"></i> Editar Plato
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre del Plato</label>
+                        <input class="form-control" name="nombre" id="editNombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" name="descripcion" id="editDescripcion" rows="3" placeholder="Describe el plato..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Precio ($)</label>
+                        <input class="form-control" name="precio" id="editPrecio" type="number" step="1" required>
+                        <small class="text-muted">Ingresa el precio en pesos colombianos (ejemplo: 58000)</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Imagen del Plato</label>
+                        <div class="mb-2" id="editImagenPreview" style="display:none;">
+                            <img src="" id="editImagenSrc" alt="Imagen actual" class="img-fluid rounded" style="max-height:160px; object-fit:cover;">
+                        </div>
+                        <input class="form-control" name="imagen" type="file" accept="image/*">
+                        <small class="text-muted">Deja vacío para mantener la imagen actual.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button class="btn btn-primary" type="submit">
+                        <i class="bi bi-check-circle"></i> Guardar cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Script para llenar el modal de edición con los datos del plato
+document.addEventListener('DOMContentLoaded', function() {
+    var modalEditarPlato = document.getElementById('modalEditarPlato');
+    
+    modalEditarPlato.addEventListener('show.bs.modal', function (event) {
+        // Botón que disparó el modal
+        var button = event.relatedTarget;
+        
+        // Extraer datos del botón
+        var platoId = button.getAttribute('data-plato-id');
+        var platoNombre = button.getAttribute('data-plato-nombre');
+        var platoDescripcion = button.getAttribute('data-plato-descripcion');
+        var platoPrecio = button.getAttribute('data-plato-precio');
+        var platoImagen = button.getAttribute('data-plato-imagen');
+        
+        // Actualizar el formulario
+        var form = document.getElementById('formEditarPlato');
+        form.action = '/admin/restaurante/editar/' + platoId;
+        
+        document.getElementById('editNombre').value = platoNombre;
+        document.getElementById('editDescripcion').value = platoDescripcion || '';
+        document.getElementById('editPrecio').value = platoPrecio;
+        
+        // Mostrar imagen si existe
+        if (platoImagen && platoImagen !== 'None') {
+            document.getElementById('editImagenPreview').style.display = 'block';
+            document.getElementById('editImagenSrc').src = '/static/img/platos/' + platoImagen;
+        } else {
+            document.getElementById('editImagenPreview').style.display = 'none';
+        }
+    });
+});
+</script>
+
 {% endblock %}

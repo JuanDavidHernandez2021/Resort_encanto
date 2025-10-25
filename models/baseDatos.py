@@ -115,3 +115,42 @@ class Estadistica(db.Model):
 
     def __repr__(self):
         return f"<Estadistica {self.fecha} - Ocupación: {self.ocupacion_porcentaje}%>"
+
+# ------------------------------
+# Tabla de Platos
+# ------------------------------
+class nuevoPlato(db.Model):
+    __tablename__ = "nuevoplato"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    nombre = db.Column(db.String(100), nullable=False)
+    descripcion = db.Column(db.Text, nullable=True)
+    precio = db.Column(db.Float, nullable=False)
+    imagen = db.Column(db.String(255), nullable=True)
+
+    def __repr__(self):
+        return f"<nuevoPlato {self.nombre} - ${self.precio}>"
+
+
+# Tabla de Pedidos
+# ------------------------------
+class Pedido(db.Model):
+    __tablename__ = "pedidos"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    nuevoPlato_id = db.Column(db.Integer, db.ForeignKey('nuevoplato.id'), nullable=False)
+    nombreCliente = db.Column(db.String(100), nullable=False)
+    cantidad = db.Column(db.Integer, nullable=False, default=1)
+    checkin = db.Column(db.Date, nullable=False)
+    checkout = db.Column(db.Date, nullable=False)
+    # Hora elegida por el usuario (zona local de Colombia)
+    hora_reserva = db.Column(db.Time, nullable=True)
+    instrucciones = db.Column(db.Text, nullable=True)
+    total = db.Column(db.Float, nullable=False)
+    estado = db.Column(db.String(20), nullable=False, default='Pendiente')  # Pendiente, En Preparación, Listo, Entregado
+
+    # Relación con plato
+    plato = db.relationship('nuevoPlato', backref='pedidos', lazy=True)
+
+    def __repr__(self):
+        return f"<Pedido {self.id} - {self.nombreCliente} - {self.estado}>"

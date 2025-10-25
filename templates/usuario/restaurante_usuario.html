@@ -1,0 +1,204 @@
+{% extends 'usuario/base.html' %}
+
+{% block title %}Restaurante{% endblock %}
+
+{% block content %}
+<br>
+<div class="container mt-5">
+	<div class="text-center mb-4">
+		<h2><i class="bi bi-cup-hot"></i> Nuestro Restaurante</h2>
+		<p class="text-muted">Descubre nuestros platos disponibles hoy</p>
+	</div>
+
+	<div class="row">
+		{% for p in platos %}
+		<div class="col-md-4 mb-4">
+			<div class="card h-100 shadow-sm">
+				{% if p.imagen %}
+				<img src="{{ url_for('static', filename='img/platos/' + p.imagen) }}" class="card-img-top" alt="{{ p.nombre }}" style="height: 200px; object-fit: cover;">
+				{% else %}
+				<div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">
+					<i class="bi bi-image" style="font-size: 3rem;"></i>
+				</div>
+				{% endif %}
+				<div class="card-body d-flex flex-column">
+					<h5 class="card-title">{{ p.nombre }}</h5>
+					<p class="card-text text-muted">{{ p.descripcion or 'Delicioso plato disponible' }}</p>
+					<div class="mt-auto d-flex justify-content-between align-items-center">
+						<span class="fw-bold text-success">${{ p.precio|co_pesos }}</span>
+						<button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalOrdenarPlato"
+								data-plato-id="{{ p.id }}"
+								data-plato-nombre="{{ p.nombre }}"
+								data-plato-descripcion="{{ p.descripcion }}"
+								data-plato-precio="{{ p.precio }}"
+								data-plato-imagen="{{ p.imagen }}">
+							<i class="bi bi-cart-plus"></i> Ordenar
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+		{% else %}
+		<div class="col-12">
+			<div class="alert alert-info text-center" role="alert">
+				<i class="bi bi-info-circle"></i> Aún no hay platos disponibles. Vuelve pronto.
+			</div>
+		</div>
+		{% endfor %}
+	</div>
+</div>
+
+<!-- Modal Ordenar Plato -->
+<div class="modal fade" id="modalOrdenarPlato" tabindex="-1" aria-labelledby="modalOrdenarPlatoLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form method="POST" action="{{ url_for('main.realizar_pedido') }}" id="formOrdenarPlato">
+				<input type="hidden" name="plato_id" id="ordenPlatoId">
+				<div class="modal-header bg-primary text-white">
+					<h5 class="modal-title" id="modalOrdenarPlatoLabel">
+						<i class="bi bi-cart-check"></i> Realizar Pedido
+					</h5>
+					<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<!-- Vista previa del plato -->
+					<div class="text-center mb-3" id="ordenPlatoPreview">
+						<img src="" id="ordenImagenSrc" alt="Plato" class="img-fluid rounded mb-2" style="max-height: 180px; object-fit: cover;">
+						<h5 id="ordenNombre" class="fw-bold"></h5>
+						<p id="ordenDescripcion" class="text-muted small"></p>
+						<h4 id="ordenPrecio" class="text-success"></h4>
+					</div>
+					
+					<hr>
+					
+					<!-- Formulario de pedido -->
+					<div class="mb-3">
+						<label class="form-label fw-bold">Cantidad</label>
+						<input class="form-control" name="cantidad" id="ordenCantidad" type="number" min="1" value="1" required>
+					</div>
+					
+					<div class="mb-3">
+						<label class="form-label fw-bold">Nombre del Cliente</label>
+						<input class="form-control" name="nombreCliente" id="ordenNombreCliente" type="text" placeholder="Tu nombre completo" required>
+					</div>
+					
+					<div class="row">
+						<div class="col-md-6 mb-3">
+							<label class="form-label fw-bold">Check-in</label>
+							<input class="form-control" name="checkin" id="ordenCheckin" type="date" required>
+						</div>
+						<div class="col-md-6 mb-3">
+							<label class="form-label fw-bold">Check-out</label>
+							<input class="form-control" name="checkout" id="ordenCheckout" type="date" required>
+						</div>
+					</div>
+
+					<!-- Hora de reserva (opcional) -->
+					<div class="mb-3">
+						<label class="form-label fw-bold" for="ordenHora">Hora de reserva (opcional)</label>
+						<input class="form-control" name="hora" id="ordenHora" type="time">
+					</div>
+					
+					<div class="mb-3">
+						<label class="form-label fw-bold">Instrucciones Especiales (Opcional)</label>
+						<textarea class="form-control" name="instrucciones" id="ordenInstrucciones" rows="3" placeholder="Ej: Sin cebolla, término medio, etc."></textarea>
+					</div>
+					
+					<div class="alert alert-info">
+						<i class="bi bi-info-circle"></i> <strong>Total a pagar:</strong> <span id="ordenTotal" class="fw-bold">$0</span>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+						<i class="bi bi-x-circle"></i> Cancelar
+					</button>
+					<button class="btn btn-success" type="submit">
+						<i class="bi bi-check-circle"></i> Confirmar Pedido
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+
+<script>
+// Script para llenar el modal de pedido con los datos del plato
+document.addEventListener('DOMContentLoaded', function() {
+	var modalOrdenarPlato = document.getElementById('modalOrdenarPlato');
+	var ordenCantidad = document.getElementById('ordenCantidad');
+	var precioUnitario = 0;
+	
+	// Evento cuando se abre el modal
+	modalOrdenarPlato.addEventListener('show.bs.modal', function (event) {
+		// Botón que disparó el modal
+		var button = event.relatedTarget;
+		
+		// Extraer datos del plato
+		var platoId = button.getAttribute('data-plato-id');
+		var platoNombre = button.getAttribute('data-plato-nombre');
+		var platoDescripcion = button.getAttribute('data-plato-descripcion');
+		var platoPrecio = parseFloat(button.getAttribute('data-plato-precio'));
+		var platoImagen = button.getAttribute('data-plato-imagen');
+		
+		precioUnitario = platoPrecio;
+		
+		// Actualizar el campo oculto con el ID del plato
+		document.getElementById('ordenPlatoId').value = platoId;
+		
+		// Actualizar el modal con los datos
+		document.getElementById('ordenNombre').textContent = platoNombre;
+		document.getElementById('ordenDescripcion').textContent = platoDescripcion || 'Delicioso plato disponible';
+		document.getElementById('ordenPrecio').textContent = '$' + formatoPesos(platoPrecio);
+		
+		// Mostrar imagen si existe
+		if (platoImagen && platoImagen !== 'None') {
+			document.getElementById('ordenImagenSrc').src = '/static/img/platos/' + platoImagen;
+		} else {
+			document.getElementById('ordenImagenSrc').src = '/static/img/defaul.jpg';
+		}
+		
+		// Resetear cantidad y calcular total
+		ordenCantidad.value = 1;
+		calcularTotal();
+
+		// Prefijar la hora actual de Colombia en el campo hora (opcional)
+		var horaInput = document.getElementById('ordenHora');
+		if (horaInput) {
+			try {
+				var hhmm = new Intl.DateTimeFormat('es-CO', {
+					hour: '2-digit',
+					minute: '2-digit',
+					hour12: false,
+					timeZone: 'America/Bogota'
+				}).format(new Date());
+				// Asegurar formato HH:MM
+				hhmm = hhmm.replace('.', ':');
+				horaInput.value = hhmm;
+			} catch (e) {
+				var now = new Date();
+				var pad = function(n){ return String(n).padStart(2,'0'); };
+				horaInput.value = pad(now.getHours()) + ':' + pad(now.getMinutes());
+			}
+		}
+	});
+	
+	// Calcular total al cambiar cantidad
+	ordenCantidad.addEventListener('input', calcularTotal);
+	
+	function calcularTotal() {
+		var cantidad = parseInt(ordenCantidad.value) || 1;
+		var total = precioUnitario * cantidad;
+		document.getElementById('ordenTotal').textContent = '$' + formatoPesos(total);
+	}
+	
+	// Formato de pesos colombianos
+	function formatoPesos(valor) {
+		return Math.round(valor).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+	}
+	
+	// El formulario ahora se envía normalmente al servidor
+	// El backend procesará el pedido y guardará en la base de datos
+});
+</script>
+
+{% endblock %}

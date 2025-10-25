@@ -31,6 +31,26 @@ extensions.serializer = URLSafeTimedSerializer(app.secret_key)
 perfil_bp = Blueprint("perfil_usuario", __name__, url_prefix="/usuario")
 
 
+# ------------------- Filtros de plantilla (Jinja) -------------------
+@app.template_filter('co_pesos')
+def co_pesos(value, decimals=0):
+    """Formatea un número al formato colombiano de pesos.
+    Ejemplos:
+      58000 -> "58.000"
+      55 -> "55.000"
+      1234567 -> "1.234.567"
+    """
+    try:
+        n = float(value)
+    except Exception:
+        return value
+    
+    # Siempre redondear a entero para pesos
+    n_int = int(round(n))
+    # Formatear con separador de miles
+    return f"{n_int:,}".replace(',', '.')
+
+
 # Inyectar el usuario actual en todas las plantillas (aunque flask_login no esté instalado)
 @app.context_processor
 
@@ -44,18 +64,30 @@ def inject_current_user():
         return {'current_user': _Anonymous()}
 
 
-# Verificar y crear columnas necesarias en la tabla usuario
+# Verificar y crear columnas necesarias en la base de datos (migraciones simples)
 try:
     with app.app_context():
         try:
             inspector = inspect(db.engine)
-            cols = [c['name'] for c in inspector.get_columns('usuario')] if 'usuario' in inspector.get_table_names() else []
             stmts = []
-            # Agregar columnas para recuperación de contraseña si no existen
-            if 'reset_code' not in cols:
-                stmts.append("ALTER TABLE usuario ADD COLUMN reset_code VARCHAR(6) NULL")
-            if 'reset_expire' not in cols:
-                stmts.append("ALTER TABLE usuario ADD COLUMN reset_expire DATETIME NULL")
+
+            # Tabla usuario: columnas para recuperación de contraseña
+            if 'usuario' in inspector.get_table_names():
+                cols_usuario = [c['name'] for c in inspector.get_columns('usuario')]
+                if 'reset_code' not in cols_usuario:
+                    stmts.append("ALTER TABLE usuario ADD COLUMN reset_code VARCHAR(6) NULL")
+                if 'reset_expire' not in cols_usuario:
+                    stmts.append("ALTER TABLE usuario ADD COLUMN reset_expire DATETIME NULL")
+
+            # Tabla pedidos: agregar/quitar columnas de pedidos
+            if 'pedidos' in inspector.get_table_names():
+                cols_ped = [c['name'] for c in inspector.get_columns('pedidos')]
+                if 'hora_reserva' not in cols_ped:
+                    stmts.append("ALTER TABLE pedidos ADD COLUMN hora_reserva TIME NULL")
+                # Eliminar columna 'fecha' si existe
+                if 'fecha' in cols_ped:
+                    stmts.append("ALTER TABLE pedidos DROP COLUMN fecha")
+
             for s in stmts:
                 try:
                     db.session.execute(text(s))

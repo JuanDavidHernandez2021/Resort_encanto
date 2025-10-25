@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, current_app, flash
 from datetime import datetime
-from models.baseDatos import db, nuevaHabitacion, Usuario, Huesped, Estadistica
+from models.baseDatos import db, nuevaHabitacion, Usuario, Huesped, Estadistica, nuevoPlato, Pedido
 import os
 from werkzeug.utils import secure_filename
 from flask import current_app
@@ -76,7 +76,66 @@ def hospedaje_usuario():
 
 @main_bp.route('/restaurante_usuario')
 def restaurante_usuario():
-    return render_template('usuario/restaurante_usuario.html')
+    # Cargar todos los platos para mostrarlos solo en la vista de usuario
+    platos = nuevoPlato.query.all()
+    return render_template('usuario/restaurante_usuario.html', platos=platos)
+
+
+@main_bp.route('/realizar_pedido', methods=['POST'])
+def realizar_pedido():
+    """Procesa y guarda un nuevo pedido desde el formulario de usuario"""
+    try:
+        # Obtener datos del formulario
+        plato_id = request.form.get('plato_id')
+        nombre_cliente = request.form.get('nombreCliente')
+        cantidad = int(request.form.get('cantidad', 1))
+        checkin = request.form.get('checkin')
+        checkout = request.form.get('checkout')
+        instrucciones = request.form.get('instrucciones', '')
+        hora_str = request.form.get('hora')  # formato esperado HH:MM
+        
+        # Buscar el plato
+        plato = nuevoPlato.query.get_or_404(plato_id)
+        
+        # Convertir fechas de string a date
+        from datetime import datetime as dt
+        checkin_date = dt.strptime(checkin, '%Y-%m-%d').date() if checkin else None
+        checkout_date = dt.strptime(checkout, '%Y-%m-%d').date() if checkout else None
+        
+        # Calcular total
+        total = plato.precio * cantidad
+        
+        # Crear nuevo pedido
+        from datetime import datetime as dt
+        hora_reserva = None
+        try:
+            if hora_str:
+                hora_reserva = dt.strptime(hora_str, '%H:%M').time()
+        except Exception:
+            hora_reserva = None
+
+        nuevo_pedido = Pedido(
+            nuevoPlato_id=plato_id,
+            nombreCliente=nombre_cliente,
+            cantidad=cantidad,
+            checkin=checkin_date,
+            checkout=checkout_date,
+            hora_reserva=hora_reserva,
+            instrucciones=instrucciones,
+            total=total,
+            estado='Pendiente'
+        )
+        
+        db.session.add(nuevo_pedido)
+        db.session.commit()
+        
+        flash(f'¡Pedido #{nuevo_pedido.id} confirmado! Reserva del {checkin} al {checkout}.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al procesar el pedido: {str(e)}', 'danger')
+    
+    return redirect(url_for('main.restaurante_usuario'))
+
 
 @main_bp.route('/experiencias_usuario')
 def experiencias_usuario():
@@ -237,7 +296,8 @@ def hospedaje_admin():
 
 @main_bp.route('/restaurante_admin')
 def restaurante_admin():
-    return render_template('dashboard/restaurante_admin.html')
+    # Redirige a la ruta correcta del panel de administración que carga los platos
+    return redirect(url_for('admin.admin_restaurante'))
 
 @main_bp.route('/experiencias_admin')
 def experiencias_admin():

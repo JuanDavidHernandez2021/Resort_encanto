@@ -1,0 +1,128 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Pedidos - Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+<br>
+    <!-- Encabezado -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-receipt-cutoff"></i> Gestión de Pedidos</h2>
+        <a href="{{ url_for('admin.admin_restaurante') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver a Restaurante
+        </a>
+    </div>
+
+    <!-- Mensajes Flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Filtros de estado -->
+    <div class="mb-4">
+        <div class="btn-group" role="group">
+            <a href="{{ url_for('admin.admin_pedidos') }}" class="btn btn-outline-primary {% if not filtro_estado %}active{% endif %}">
+                <i class="bi bi-list"></i> Todos
+            </a>
+            <a href="{{ url_for('admin.admin_pedidos', estado='Pendiente') }}" class="btn btn-outline-warning {% if filtro_estado == 'Pendiente' %}active{% endif %}">
+                <i class="bi bi-clock"></i> Pendientes
+            </a>
+            <a href="{{ url_for('admin.admin_pedidos', estado='En Preparación') }}" class="btn btn-outline-info {% if filtro_estado == 'En Preparación' %}active{% endif %}">
+                <i class="bi bi-hourglass-split"></i> En Preparación
+            </a>
+            <a href="{{ url_for('admin.admin_pedidos', estado='Listo') }}" class="btn btn-outline-success {% if filtro_estado == 'Listo' %}active{% endif %}">
+                <i class="bi bi-check-circle"></i> Listos
+            </a>
+            <a href="{{ url_for('admin.admin_pedidos', estado='Entregado') }}" class="btn btn-outline-secondary {% if filtro_estado == 'Entregado' %}active{% endif %}">
+                <i class="bi bi-check-all"></i> Entregados
+            </a>
+        </div>
+    </div>
+
+    <!-- Lista de pedidos -->
+    <h4>📋 Pedidos registrados ({{ pedidos|length }})</h4>
+    
+    <div class="row mt-3">
+    {% for pedido in pedidos %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card shadow-sm h-100 border-start border-4 
+                {% if pedido.estado == 'Pendiente' %}border-warning
+                {% elif pedido.estado == 'En Preparación' %}border-info
+                {% elif pedido.estado == 'Listo' %}border-success
+                {% else %}border-secondary{% endif %}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">Pedido #{{ pedido.id }}</span>
+                    <span class="badge 
+                        {% if pedido.estado == 'Pendiente' %}bg-warning text-dark
+                        {% elif pedido.estado == 'En Preparación' %}bg-info
+                        {% elif pedido.estado == 'Listo' %}bg-success
+                        {% else %}bg-secondary{% endif %}">
+                        {{ pedido.estado }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title text-primary">{{ pedido.plato.nombre }}</h5>
+                    <hr>
+                    <p class="mb-2"><i class="bi bi-person"></i> <strong>Cliente:</strong> {{ pedido.nombreCliente }}</p>
+                        <p class="mb-2"><i class="bi bi-calendar-check"></i> <strong>Check-in:</strong> {{ pedido.checkin.strftime('%d/%m/%Y') }}</p>
+                        <p class="mb-2"><i class="bi bi-calendar-x"></i> <strong>Check-out:</strong> {{ pedido.checkout.strftime('%d/%m/%Y') }}</p>
+                    <p class="mb-2"><i class="bi bi-box"></i> <strong>Cantidad:</strong> {{ pedido.cantidad }}</p>
+                    
+                    {% if pedido.instrucciones %}
+                    <div class="alert alert-light mb-2">
+                        <i class="bi bi-info-circle"></i> <strong>Instrucciones:</strong><br>
+                        <small>{{ pedido.instrucciones }}</small>
+                    </div>
+                    {% endif %}
+                    
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-center">
+                        {% if pedido.hora_reserva %}
+                        <span class="text-muted small">
+                            <i class="bi bi-clock"></i>
+                            Reserva: {{ pedido.checkin.strftime('%d/%m/%Y') }} {{ pedido.hora_reserva.strftime('%H:%M') }}
+                        </span>
+                        {% endif %}
+                        <h4 class="text-success mb-0">${{ pedido.total|co_pesos }}</h4>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-0">
+                    <form method="POST" action="{{ url_for('admin.admin_pedido_cambiar_estado', pedido_id=pedido.id) }}" class="d-flex gap-2">
+                        <select name="estado" class="form-select form-select-sm" required>
+                            <option value="Pendiente" {% if pedido.estado == 'Pendiente' %}selected{% endif %}>Pendiente</option>
+                            <option value="En Preparación" {% if pedido.estado == 'En Preparación' %}selected{% endif %}>En Preparación</option>
+                            <option value="Listo" {% if pedido.estado == 'Listo' %}selected{% endif %}>Listo</option>
+                            <option value="Entregado" {% if pedido.estado == 'Entregado' %}selected{% endif %}>Entregado</option>
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-primary">
+                            <i class="bi bi-save"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-danger" 
+                                onclick="if(confirm('¿Eliminar este pedido?')) { 
+                                    fetch('{{ url_for('admin.admin_pedido_eliminar', pedido_id=pedido.id) }}', {method: 'POST'})
+                                    .then(() => location.reload()); 
+                                }">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="col-12">
+            <div class="alert alert-info text-center" role="alert">
+                <i class="bi bi-info-circle-fill"></i> No hay pedidos registrados aún.
+            </div>
+        </div>
+    {% endfor %}
+    </div>
+
+</div>
+{% endblock %}
